@@ -3,7 +3,7 @@ const Product = require("../models/Product");
 
 const router = express.Router();
 
-// GET /api/products - list
+
 router.get("/", async (req, res) => {
   try {
     const products = await Product.find({ isActive: true }).sort("price");
@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/products/:id - detail
+
 router.get("/:id", async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
