@@ -12,31 +12,31 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy so req.ip reflects client IPs behind proxies (Heroku / nginx)
+
 app.set("trust proxy", true);
 
-// Admin emails from .env (comma separated)
+
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-//--------------------------------------------------
-// Ensure uploads folder exists
-//--------------------------------------------------
+
+
+
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-//--------------------------------------------------
-// MongoDB
-//--------------------------------------------------
+
+
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
-    // Run cleanup once on startup when connection is ready
+    
     if (mongoose.models.BannedUser) {
       mongoose.models.BannedUser.deleteMany({
         banType: "temporary",
@@ -50,17 +50,17 @@ mongoose
   })
   .catch((err) => console.error("Mongo error", err));
 
-//--------------------------------------------------
-// Schemas & Models
-//--------------------------------------------------
+
+
+
 const UserSchema = new mongoose.Schema({
   googleId: String,
   name: String,
   email: String,
   picture: String,
   isAdmin: { type: Boolean, default: false },
-  lastIp: String, // Track last login IP
-  lastLoginAt: Date, // Track last login time
+  lastIp: String, 
+  lastLoginAt: Date, 
   cart: [
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -86,29 +86,29 @@ const CommentSchema = new mongoose.Schema({
   userPicture: String,
   text: String,
   createdAt: { type: Date, default: Date.now },
-  isAdmin: { type: Boolean, default: false },   // admin commenter
-  parentComment: { type: mongoose.Schema.Types.ObjectId, ref: "Comment", default: null }, // reply-to
-  isAdminReply: { type: Boolean, default: false }, // admin reply to a specific comment
+  isAdmin: { type: Boolean, default: false },   
+  parentComment: { type: mongoose.Schema.Types.ObjectId, ref: "Comment", default: null }, 
+  isAdminReply: { type: Boolean, default: false }, 
 });
 
 const User = mongoose.model("User", UserSchema);
 const Product = mongoose.model("Product", ProductSchema);
 const Comment = mongoose.model("Comment", CommentSchema);
 
-// -------------------------------------------------
-// Load admin-related models (only BannedUser needed now)
-// -------------------------------------------------
-// require the models so they register with mongoose
-// (this file should exist: ./models/BannedUser.js)
+
+
+
+
+
 try {
   require("./models/BannedUser");
 } catch (e) {
-  // If file is missing, middleware below will simply not find entries.
-  // Log for visibility — but we don't crash so server can still run.
+  
+  
   console.warn("Warning: BannedUser model not loaded (./models/BannedUser.js missing or error).", e.message || e);
 }
 
-// Grab the BannedUser model (if available)
+
 let BannedUserModel = null;
 try {
   BannedUserModel = mongoose.model("BannedUser");
@@ -116,9 +116,9 @@ try {
   BannedUserModel = null;
 }
 
-//--------------------------------------------------
-// Sessions
-//--------------------------------------------------
+
+
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "change-me",
@@ -128,9 +128,9 @@ app.use(
   })
 );
 
-//--------------------------------------------------
-// Passport Google OAuth
-//--------------------------------------------------
+
+
+
 passport.use(
   new GoogleStrategy(
     {
@@ -185,15 +185,15 @@ passport.deserializeUser(async (id, done) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
-//--------------------------------------------------
-// Body parsers (MUST be before routes that need them)
-//--------------------------------------------------
+
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//--------------------------------------------------
-// Admin email check middleware (after auth, before routes)
-//--------------------------------------------------
+
+
+
 app.use((req, res, next) => {
   if (req.user && req.user.email) {
     const userEmail = String(req.user.email).trim().toLowerCase();
@@ -206,11 +206,11 @@ app.use((req, res, next) => {
 });
 
 
-//--------------------------------------------------
-// Check banned users middleware (after authentication)
-//--------------------------------------------------
+
+
+
 const banAndSessionMiddleware = async (req, res, next) => {
-  // Allow access to banned page, logout, auth routes, and ban-info API
+  
   if (
     req.path === "/banned" ||
     req.path === "/api/ban-info" ||
@@ -220,7 +220,7 @@ const banAndSessionMiddleware = async (req, res, next) => {
     return next();
   }
 
-  // Check if logged-in user is banned
+  
   if (req.user && BannedUserModel) {
     try {
       const banned = await BannedUserModel.findOne({
@@ -233,53 +233,53 @@ const banAndSessionMiddleware = async (req, res, next) => {
           },
           {
             $or: [
-              { expiresAt: null }, // Permanent ban
-              { expiresAt: { $gt: new Date() } } // Temporary ban not expired
+              { expiresAt: null }, 
+              { expiresAt: { $gt: new Date() } } 
             ]
           }
         ]
       }).lean();
 
       if (banned) {
-        // If temporary ban has expired, remove and continue
+        
         if (banned.expiresAt && new Date(banned.expiresAt) <= new Date()) {
           await BannedUserModel.deleteOne({ _id: banned._id }).catch(() => { });
           return next();
         }
 
-        // Store ban info in session
+        
         req.session.banReason = banned.reason || "Violation of terms";
         req.session.bannedAt = banned.bannedAt;
         req.session.banExpiresAt = banned.expiresAt;
         req.session.banType = banned.banType || "permanent";
-        req.session.bannedEmail = req.user.email; // Store email for verification
+        req.session.bannedEmail = req.user.email; 
 
-        // Save session before redirect so /banned and /api/ban-info can read it.
-        // IMPORTANT: do NOT forcibly logout here — redirect only.
+        
+        
         req.session.save((err) => {
           if (err) console.error("Session save error:", err);
           return res.redirect("/banned");
         });
-        return; // early return after redirect
+        return; 
       }
     } catch (err) {
       console.error("Banned user check failed", err);
-      // Continue on error to avoid blocking legitimate users
+      
     }
   }
 
   next();
 };
 
-// Mount middleware on desired routes (keep original mounts)
+
 app.use('/api', banAndSessionMiddleware);
 app.use('/admin', banAndSessionMiddleware);
 
 
 
-//--------------------------------------------------
-// Auth helper middleware
-//--------------------------------------------------
+
+
+
 function requireUser(req, res, next) {
   if (!req.user) return res.status(401).json({ error: "Not logged in" });
   next();
@@ -300,13 +300,13 @@ function requireAdmin(req, res, next) {
 
 
 
-//--------------------------------------------------
-// Note: IP-block middleware removed as requested
-//--------------------------------------------------
 
-//--------------------------------------------------
-// Auth routes
-//--------------------------------------------------
+
+
+
+
+
+
 app.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
@@ -319,7 +319,7 @@ app.get(
     try {
       console.log("Logged in as:", req.user && req.user.email);
 
-      // Track IP address (stored for informational purposes only)
+      
       const clientIp = req.ip || req.headers["x-forwarded-for"]?.split(",")?.[0]?.trim() || req.connection.remoteAddress;
       if (req.user && clientIp) {
         req.user.lastIp = clientIp;
@@ -327,7 +327,7 @@ app.get(
         await req.user.save().catch(() => { });
       }
 
-      // Check if user is banned after successful authentication
+      
       if (req.user && BannedUserModel) {
         const banned = await BannedUserModel.findOne({
           $and: [
@@ -339,15 +339,15 @@ app.get(
             },
             {
               $or: [
-                { expiresAt: null }, // Permanent ban
-                { expiresAt: { $gt: new Date() } } // Temporary ban not expired
+                { expiresAt: null }, 
+                { expiresAt: { $gt: new Date() } } 
               ]
             }
           ]
         }).lean();
 
         if (banned) {
-          // If temporary ban expired, delete it and proceed
+          
           if (banned.expiresAt && new Date(banned.expiresAt) <= new Date()) {
             await BannedUserModel.deleteOne({ _id: banned._id }).catch(() => { });
             if (req.user && req.user.isAdmin) {
@@ -356,23 +356,23 @@ app.get(
             return res.redirect("/");
           }
 
-          // Delete the newly created account if it was just created (banned users shouldn't have accounts)
+          
           try {
             await User.deleteOne({ _id: req.user._id });
           } catch (deleteErr) {
             console.error("Failed to delete banned user account:", deleteErr);
           }
 
-          // Store ban info in session and redirect to banned page
+          
           req.session.banReason = banned.reason || "Violation of terms";
           req.session.bannedAt = banned.bannedAt;
           req.session.banExpiresAt = banned.expiresAt;
           req.session.banType = banned.banType || "permanent";
-          req.session.bannedEmail = req.user.email; // Store email for verification
+          req.session.bannedEmail = req.user.email; 
 
-          // Save session before redirect so the banned page can read it.
-          // Note: we do NOT call req.logout here because that would clear the session
-          // and prevent /api/ban-info or /banned from showing useful info.
+          
+          
+          
           req.session.save((err) => {
             if (err) console.error("Session save error:", err);
             return res.redirect("/banned");
@@ -398,24 +398,24 @@ app.get("/auth/logout", (req, res) => {
   });
 });
 
-//--------------------------------------------------
-// Ban info endpoint (for banned page)
-//--------------------------------------------------
+
+
+
 app.get("/api/ban-info", async (req, res) => {
   try {
     let banInfo = { isBanned: false, reason: null, bannedAt: null, expiresAt: null, banType: null };
 
-    // Get email from query param, session bannedEmail, or session banReason (which means they're banned)
+    
     const emailToCheck = req.query.email
       || (req.session && req.session.bannedEmail)
       || null;
 
-    // If we have session ban info, user is definitely banned - check database to get full details
+    
     const hasSessionBanInfo = req.session && req.session.banReason;
 
-    // Check database if email is available OR if session has ban info
+    
     if (BannedUserModel && (emailToCheck || hasSessionBanInfo)) {
-      // If we have email, check by email. Otherwise, if session has banReason, try to find by session data
+      
       let banned = null;
 
       if (emailToCheck) {
@@ -424,14 +424,14 @@ app.get("/api/ban-info", async (req, res) => {
             { "user.email": emailToCheck },
             {
               $or: [
-                { expiresAt: null }, // Permanent ban
-                { expiresAt: { $gt: new Date() } } // Temporary ban not expired
+                { expiresAt: null }, 
+                { expiresAt: { $gt: new Date() } } 
               ]
             }
           ]
         }).lean();
       } else if (hasSessionBanInfo && req.session.bannedEmail) {
-        // Try using session's bannedEmail
+        
         banned = await BannedUserModel.findOne({
           $and: [
             { "user.email": req.session.bannedEmail },
@@ -446,11 +446,11 @@ app.get("/api/ban-info", async (req, res) => {
       }
 
       if (banned) {
-        // Check if temporary ban has expired
+        
         if (banned.expiresAt && new Date(banned.expiresAt) <= new Date()) {
           banInfo.isBanned = false;
         } else {
-          // Extract email from banned user object
+          
           const bannedEmail = (banned.user && typeof banned.user === 'object' && banned.user.email)
             ? banned.user.email
             : (emailToCheck || req.session.bannedEmail || null);
@@ -466,7 +466,7 @@ app.get("/api/ban-info", async (req, res) => {
           };
         }
       } else if (hasSessionBanInfo) {
-        // If database check failed but session has ban info, use session data
+        
         banInfo = {
           isBanned: true,
           reason: req.session.banReason,
@@ -477,7 +477,7 @@ app.get("/api/ban-info", async (req, res) => {
         };
       }
     } else if (hasSessionBanInfo) {
-      // Fallback: if session has ban info but no database check possible, use session
+      
       banInfo = {
         isBanned: true,
         reason: req.session.banReason,
@@ -495,9 +495,9 @@ app.get("/api/ban-info", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Ban appeal endpoint
-//--------------------------------------------------
+
+
+
 app.post("/api/ban-appeal", async (req, res) => {
   try {
     const { email, message } = req.body;
@@ -521,7 +521,7 @@ app.post("/api/ban-appeal", async (req, res) => {
     banned.appealMessage = message;
     await banned.save();
 
-    // Notify admins via Discord if webhook is configured
+    
     if (process.env.DISCORD_WEBHOOK_URL) {
       try {
         await fetch(process.env.DISCORD_WEBHOOK_URL, {
@@ -543,11 +543,11 @@ app.post("/api/ban-appeal", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Banned route - only accessible to banned users
-// Supports both /banned and /banned.html for backwards compatibility
+
+
+
 app.get("/banned", async (req, res) => {
-  // Get email to check - from logged in user or from session (for banned users who were logged out)
+  
   let emailToCheck = null;
   if (req.user && req.user.email) {
     emailToCheck = req.user.email;
@@ -555,13 +555,13 @@ app.get("/banned", async (req, res) => {
     emailToCheck = req.session.bannedEmail;
   }
 
-  // Check if session has ban info
+  
   const hasSessionBanInfo = req.session && req.session.banReason;
 
-  // Check if user is actually banned in database
+  
   let isBanned = false;
 
-  // First, try to check database if we have email
+  
   if (BannedUserModel && emailToCheck) {
     try {
       const banned = await BannedUserModel.findOne({
@@ -569,18 +569,18 @@ app.get("/banned", async (req, res) => {
           { "user.email": emailToCheck },
           {
             $or: [
-              { expiresAt: null }, // Permanent ban
-              { expiresAt: { $gt: new Date() } } // Temporary ban not expired
+              { expiresAt: null }, 
+              { expiresAt: { $gt: new Date() } } 
             ]
           }
         ]
       }).lean();
 
       if (banned) {
-        // Check if temporary ban has expired
+        
         if (banned.expiresAt && new Date(banned.expiresAt) <= new Date()) {
           isBanned = false;
-          // Clear session if ban expired
+          
           if (req.session) {
             req.session.banReason = null;
             req.session.bannedAt = null;
@@ -597,9 +597,9 @@ app.get("/banned", async (req, res) => {
     }
   }
 
-  // If database check didn't find ban but session has ban info, trust session (user was just banned)
+  
   if (!isBanned && hasSessionBanInfo) {
-    // Double-check: try to find by session's bannedEmail if available
+    
     if (BannedUserModel && req.session.bannedEmail) {
       try {
         const banned = await BannedUserModel.findOne({
@@ -622,38 +622,38 @@ app.get("/banned", async (req, res) => {
       }
     }
 
-    // If still not found but session has ban info, trust session
+    
     if (!isBanned && hasSessionBanInfo) {
       isBanned = true;
     }
   }
 
-  // If user is NOT banned, show 404
+  
   if (!isBanned) {
     return res
       .status(404)
       .sendFile(path.join(__dirname, "public", "404.html"));
   }
 
-  // User is banned → show banned page
+  
   return res.sendFile(path.join(__dirname, "public", "banned.html"));
 });
 
 app.get(["/admin"], (req, res) => {
   if (!req.user || !req.user.isAdmin) {
-    // Always pretend it doesn't exist
+    
     return res.status(404).sendFile(path.join(__dirname, "public", "404.html"));
   }
 
-  // Send the renamed protected version
+  
   return res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
 
 
-// Common page routes (without .html extension)
-// Supports both clean URLs and .html for backwards compatibility
-//--------------------------------------------------
+
+
+
 app.get(["/login"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -666,9 +666,9 @@ app.get(["/product"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "product.html"));
 });
 
-//--------------------------------------------------
-// Mount admin router (requires routes/adminRoutes.js present)
-//--------------------------------------------------
+
+
+
 try {
   const adminRoutes = require("./routes/adminRoutes");
   app.use("/api/admin", adminRoutes);
@@ -676,9 +676,9 @@ try {
   console.warn("Warning: admin routes not mounted (./routes/adminRoutes.js missing or error).", e.message || e);
 }
 
-//--------------------------------------------------
-// Multer for image upload
-//--------------------------------------------------
+
+
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -702,9 +702,9 @@ const upload = multer({
 
 
 
-//--------------------------------------------------
-// Discord logging (uses global fetch in Node 20+)
-//--------------------------------------------------
+
+
+
 async function logEvent(title, payload) {
   try {
     if (!process.env.DISCORD_WEBHOOK_URL) return;
@@ -726,9 +726,9 @@ async function logEvent(title, payload) {
   }
 }
 
-//--------------------------------------------------
-// /api/me  (user info for frontend)
-//--------------------------------------------------
+
+
+
 app.get("/api/me", (req, res) => {
   if (!req.user) return res.json({ loggedIn: false });
 
@@ -739,11 +739,11 @@ app.get("/api/me", (req, res) => {
   });
 });
 
-//--------------------------------------------------
-// Avatar routes
-//--------------------------------------------------
 
-// Avatar for current logged-in user (navbar)
+
+
+
+
 app.get("/avatar", async (req, res) => {
   try {
     const defaultPath = path.join(__dirname, "public", "default-user.jpeg");
@@ -767,7 +767,7 @@ app.get("/avatar", async (req, res) => {
   }
 });
 
-// Avatar for any user by ID (for comments)
+
 app.get("/avatar/user/:userId", async (req, res) => {
   try {
     const defaultPath = path.join(__dirname, "public", "default-user.jpeg");
@@ -793,9 +793,9 @@ app.get("/avatar/user/:userId", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Products
-//--------------------------------------------------
+
+
+
 app.get("/api/products", async (req, res) => {
   const products = await Product.find();
   res.json(products);
@@ -822,14 +822,14 @@ app.get("/api/products/:id", async (req, res) => {
   }
 });
 
-// Admin: delete product
-// Admin: delete product (also remove uploaded image file when applicable)
+
+
 app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
   try {
     const prod = await Product.findById(req.params.id).lean();
     if (!prod) return res.status(404).json({ error: "Product not found" });
 
-    // If imageUrls point to our uploads folder, attempt to remove those files
+    
     try {
       const urls = Array.isArray(prod.imageUrls) ? prod.imageUrls : (prod.imageUrl ? [prod.imageUrl] : []);
       for (const url of urls) {
@@ -867,21 +867,21 @@ app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Product comments
-//--------------------------------------------------
 
-// Get comments for a product
+
+
+
+
 app.get("/api/products/:id/comments", async (req, res) => {
   try {
     const comments = await Comment.find({ product: req.params.id })
-      .sort({ createdAt: 1 }) // oldest first makes replies feel natural
+      .sort({ createdAt: 1 }) 
       .lean();
 
     const viewer = req.user || null;
     const viewerIsAdmin = !!(viewer && viewer.isAdmin);
 
-    // map for parent name lookup
+    
     const idToName = {};
     comments.forEach((c) => {
       idToName[String(c._id)] = c.userName;
@@ -904,7 +904,7 @@ app.get("/api/products/:id/comments", async (req, res) => {
           viewer &&
           (viewer.isAdmin || String(c.user) === String(viewer._id))
         ),
-        canReply: viewerIsAdmin, // only admins get reply button
+        canReply: viewerIsAdmin, 
         avatarUrl: `/avatar/user/${c.user}`,
       }))
     );
@@ -914,7 +914,7 @@ app.get("/api/products/:id/comments", async (req, res) => {
   }
 });
 
-// Add comment with 48h cooldown per product per user
+
 app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   try {
     const { text, parentCommentId } = req.body;
@@ -938,7 +938,7 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
       }
     }
 
-    // Server-side moderation: detect links and basic profanity
+    
     const lower = (text || '').toLowerCase();
     const linkRegex = /\b(?:https?:\/\/|www\.)\S+\b/i;
     const profanityList = ["fuck", "shit", "bitch", "asshole", "damn", "bastard", "crap"];
@@ -948,14 +948,14 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
     const hasProfanity = profanityRegex.test(text);
 
     if (hasLink || hasProfanity) {
-      // Auto-moderation: create a temporary ban snapshot (5 hours) and remove the user and their comments
+      
       try {
         const userId = req.user && req.user._id;
         const userDoc = await User.findById(userId).lean();
         const comments = await Comment.find({ user: userId }).lean().catch(() => []);
         const carts = (userDoc && userDoc.cart) ? userDoc.cart : [];
 
-        const expiresAt = new Date(Date.now() + 5 * 60 * 60 * 1000); // 5 hours
+        const expiresAt = new Date(Date.now() + 5 * 60 * 60 * 1000); 
 
         if (BannedUserModel) {
           const banned = new BannedUserModel({
@@ -973,11 +973,11 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
           await banned.save().catch(() => { });
         }
 
-        // remove comments and user record
+        
         try { await Comment.deleteMany({ user: userId }).catch(() => { }); } catch (e) { }
         try { await User.deleteOne({ _id: userId }).catch(() => { }); } catch (e) { }
 
-        // Add BannedIP entry if available
+        
         try {
           const BannedIP = require('./models/BannedIP');
           const BannedIPModel = mongoose.model('BannedIP');
@@ -985,17 +985,17 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
             await BannedIPModel.create({ ip: userDoc.lastIp, reason: `Auto-ban: ${hasLink ? 'link' : 'profanity'}` }).catch(() => { });
           }
         } catch (e) {
-          // ignore if model not present
+          
         }
 
-        // destroy session so the user is effectively logged out
+        
         try { if (req.session) req.session.destroy(() => { }); } catch (e) { }
 
-        // Respond with 403 and ban info
+        
         return res.status(403).json({ error: 'Your account has been temporarily banned for violating community rules.', banType: 'temporary', expiresAt });
       } catch (modErr) {
         console.error('Auto-moderation failed', modErr);
-        // fall through and block creation
+        
         return res.status(403).json({ error: 'Comment blocked by moderation.' });
       }
     }
@@ -1003,7 +1003,7 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
     const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
     const now = Date.now();
 
-    // rate limit only for top-level comments, not admin replies
+    
     if (!parentComment) {
       const lastComment = await Comment.findOne({
         product: product._id,
@@ -1066,7 +1066,7 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   }
 });
 
-// Delete comment (admin or author)
+
 app.delete(
   "/api/products/:productId/comments/:commentId",
   requireUser,
@@ -1109,9 +1109,9 @@ app.delete(
   }
 );
 
-//--------------------------------------------------
-// Persistent cart
-//--------------------------------------------------
+
+
+
 app.get("/api/cart", requireUser, async (req, res) => {
   const cart = req.user.cart || [];
   const items = cart.map((c) => ({
@@ -1158,9 +1158,9 @@ app.delete("/api/cart", requireUser, async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Contact -> Discord
-//--------------------------------------------------
+
+
+
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, subject, message } = req.body || {};
 
@@ -1196,36 +1196,36 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Static files (must be after all routes, before 404 catchall)
-//--------------------------------------------------
+
+
+
 app.use("/uploads", express.static(uploadsDir));
 
-// Security: block direct access to .html files (serve pages only via clean routes)
+
 app.use((req, res, next) => {
   try {
     const p = String(req.path || "");
     if (p.toLowerCase().endsWith(".html")) {
-      // don't reveal file system details — serve 404 page
+      
       return res.status(404).sendFile(path.join(__dirname, "public", "404.html"));
     }
   } catch (e) {
-    // on any error, continue so we don't accidentally block legitimate traffic
+    
     console.error("HTML block middleware error:", e && e.message ? e.message : e);
   }
   next();
 });
 
-// Provide a clean /home route to serve the index page
+
 app.get(["/home"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.use(express.static(path.join(__dirname, "public")));
 
-//--------------------------------------------------
-// Fallback -> 404 for non-existent pages
-//--------------------------------------------------
+
+
+
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found" });
@@ -1236,9 +1236,9 @@ app.get("*", (req, res) => {
     .sendFile(path.join(__dirname, "public", "404.html"));
 });
 
-//--------------------------------------------------
-// Cleanup expired temporary bans (runs every hour)
-//--------------------------------------------------
+
+
+
 if (BannedUserModel) {
   setInterval(async () => {
     try {
@@ -1252,15 +1252,15 @@ if (BannedUserModel) {
     } catch (err) {
       console.error("Failed to cleanup expired bans:", err);
     }
-  }, 60 * 60 * 1000); // Run every hour
+  }, 60 * 60 * 1000); 
 }
 
 
-// The previous automatic anonymization job was removed per user request.
 
-//--------------------------------------------------
-// Start server
-//--------------------------------------------------
+
+
+
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http:
 });

@@ -1,7 +1,4 @@
-// FULL server.js
-// Express + MongoDB + Sessions + Google OAuth + Admin-by-email
-// Products + Image uploads + Discord logging + Contact + Persistent cart + Comments
-// Ban system + Auto-moderation + IP tracking + Multiple images
+
 
 require("dotenv").config();
 const express = require("express");
@@ -20,23 +17,16 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy so req.ip reflects client IPs behind proxies (Heroku / nginx)
 app.set("trust proxy", true);
 
-// Admin emails from .env (comma separated)
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-//--------------------------------------------------
-// Ensure uploads folder exists
-//--------------------------------------------------
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-//--------------------------------------------------
-// MongoDB
-//--------------------------------------------------
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
@@ -55,9 +45,6 @@ mongoose
   })
   .catch((err) => console.error("Mongo error", err));
 
-//--------------------------------------------------
-// Schemas & Models
-//--------------------------------------------------
 const UserSchema = new mongoose.Schema({
   googleId: String,
   name: String,
@@ -100,9 +87,7 @@ const User = mongoose.model("User", UserSchema);
 const Product = mongoose.model("Product", ProductSchema);
 const Comment = mongoose.model("Comment", CommentSchema);
 
-// -------------------------------------------------
 // Load admin-related models (only BannedUser needed now)
-// -------------------------------------------------
 // require the models so they register with mongoose
 // (this file should exist: ./models/BannedUser.js)
 try {
@@ -121,9 +106,6 @@ try {
   BannedUserModel = null;
 }
 
-//--------------------------------------------------
-// Sessions
-//--------------------------------------------------
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "change-me",
@@ -133,9 +115,6 @@ app.use(
   })
 );
 
-//--------------------------------------------------
-// Passport Google OAuth
-//--------------------------------------------------
 passport.use(
   new GoogleStrategy(
     {
@@ -190,15 +169,9 @@ passport.deserializeUser(async (id, done) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
-//--------------------------------------------------
-// Body parsers (MUST be before routes that need them)
-//--------------------------------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//--------------------------------------------------
-// Admin email check middleware (after auth, before routes)
-//--------------------------------------------------
 app.use((req, res, next) => {
   if (req.user && req.user.email) {
     const userEmail = String(req.user.email).trim().toLowerCase();
@@ -211,9 +184,6 @@ app.use((req, res, next) => {
 });
 
 
-//--------------------------------------------------
-// Check banned users middleware (after authentication)
-//--------------------------------------------------
 const banAndSessionMiddleware = async (req, res, next) => {
   // Allow access to banned page, logout, auth routes, and ban-info API
   if (
@@ -282,9 +252,6 @@ app.use('/admin', banAndSessionMiddleware);
 
 
 
-//--------------------------------------------------
-// Auth helper middleware
-//--------------------------------------------------
 function requireUser(req, res, next) {
   if (!req.user) return res.status(401).json({ error: "Not logged in" });
   next();
@@ -305,13 +272,6 @@ function requireAdmin(req, res, next) {
 
 
 
-//--------------------------------------------------
-// Note: IP-block middleware removed as requested
-//--------------------------------------------------
-
-//--------------------------------------------------
-// Auth routes
-//--------------------------------------------------
 app.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
@@ -403,9 +363,6 @@ app.get("/auth/logout", (req, res) => {
   });
 });
 
-//--------------------------------------------------
-// Ban info endpoint (for banned page)
-//--------------------------------------------------
 app.get("/api/ban-info", async (req, res) => {
   try {
     let banInfo = { isBanned: false, reason: null, bannedAt: null, expiresAt: null, banType: null };
@@ -500,9 +457,6 @@ app.get("/api/ban-info", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Ban appeal endpoint
-//--------------------------------------------------
 app.post("/api/ban-appeal", async (req, res) => {
   try {
     const { email, message } = req.body;
@@ -548,9 +502,6 @@ app.post("/api/ban-appeal", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Banned route - only accessible to banned users
-// Supports both /banned and /banned.html for backwards compatibility
 app.get("/banned", async (req, res) => {
   // Get email to check - from logged in user or from session (for banned users who were logged out)
   let emailToCheck = null;
@@ -663,9 +614,6 @@ app.get(["/admin"], (req, res) => {
 
 
 
-// Common page routes (without .html extension)
-// Supports both clean URLs and .html for backwards compatibility
-//--------------------------------------------------
 app.get(["/login"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -678,9 +626,6 @@ app.get(["/product"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "product.html"));
 });
 
-//--------------------------------------------------
-// Mount admin router (requires routes/adminRoutes.js present)
-//--------------------------------------------------
 try {
   const adminRoutes = require("./routes/adminRoutes");
   app.use("/api/admin", adminRoutes);
@@ -688,9 +633,6 @@ try {
   console.warn("Warning: admin routes not mounted (./routes/adminRoutes.js missing or error).", e.message || e);
 }
 
-//--------------------------------------------------
-// Protect admin.html (404 for non-admins)
-//--------------------------------------------------
 app.get("/admin.html", (req, res) => {
   if (!req.user || !req.user.isAdmin) {
     return res
@@ -701,21 +643,12 @@ app.get("/admin.html", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-//--------------------------------------------------
-// Body parsers
-//--------------------------------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//--------------------------------------------------
-// Static
-//--------------------------------------------------
 app.use("/uploads", express.static(uploadsDir));
 app.use(express.static(path.join(__dirname, "public")));
 
-//--------------------------------------------------
-// Multer for image upload
-//--------------------------------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -737,9 +670,6 @@ const upload = multer({
   },
 });
 
-//--------------------------------------------------
-// Discord logging (uses global fetch in Node 20+)
-//--------------------------------------------------
 async function logEvent(title, payload) {
   try {
     if (!process.env.DISCORD_WEBHOOK_URL) return;
@@ -761,9 +691,6 @@ async function logEvent(title, payload) {
   }
 }
 
-//--------------------------------------------------
-// /api/me  (user info for frontend)
-//--------------------------------------------------
 app.get("/api/me", (req, res) => {
   if (!req.user) return res.json({ loggedIn: false });
 
@@ -773,10 +700,6 @@ app.get("/api/me", (req, res) => {
     user: { name, email, isAdmin, picture },
   });
 });
-
-//--------------------------------------------------
-// Avatar routes
-//--------------------------------------------------
 
 // Avatar for current logged-in user (navbar)
 app.get("/avatar", async (req, res) => {
@@ -910,7 +833,6 @@ app.get("/api/products/:id/comments", async (req, res) => {
   }
 });
 
-// Add comment with 48h cooldown per product per user
 app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   try {
     const { text, parentCommentId } = req.body;
@@ -1068,7 +990,6 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   }
 });
 
-// Delete comment (admin or author)
 app.delete(
   "/api/products/:productId/comments/:commentId",
   requireUser,
@@ -1111,9 +1032,6 @@ app.delete(
   }
 );
 
-//--------------------------------------------------
-// Persistent cart
-//--------------------------------------------------
 app.get("/api/cart", requireUser, async (req, res) => {
   const cart = req.user.cart || [];
   const items = cart.map((c) => ({
@@ -1160,9 +1078,6 @@ app.delete("/api/cart", requireUser, async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Contact -> Discord
-//--------------------------------------------------
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, subject, message } = req.body || {};
 
@@ -1198,9 +1113,6 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-//--------------------------------------------------
-// Static files (must be after all routes, before 404 catchall)
-//--------------------------------------------------
 app.use("/uploads", express.static(uploadsDir));
 
 // Security: block direct access to .html files (serve pages only via clean routes)
@@ -1218,16 +1130,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Provide a clean /home route to serve the index page
 app.get(["/home"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.use(express.static(path.join(__dirname, "public")));
 
-//--------------------------------------------------
-// Fallback -> 404 for non-existent pages
-//--------------------------------------------------
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found" });
@@ -1238,9 +1146,6 @@ app.get("*", (req, res) => {
     .sendFile(path.join(__dirname, "public", "404.html"));
 });
 
-//--------------------------------------------------
-// Cleanup expired temporary bans (runs every hour)
-//--------------------------------------------------
 if (BannedUserModel) {
   setInterval(async () => {
     try {
@@ -1258,11 +1163,6 @@ if (BannedUserModel) {
 }
 
 
-// The previous automatic anonymization job was removed per user request.
-
-//--------------------------------------------------
-// Start server
-//--------------------------------------------------
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
