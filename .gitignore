@@ -1,0 +1,15 @@
+# Local files
+node_modules/
+.env
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Vercel
+.vercel
