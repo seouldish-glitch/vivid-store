@@ -6,10 +6,10 @@
   <title>Vivid Vision | Store</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>
-  <!-- LOADING OVERLAY -->
   <div id="vv-loader" class="vv-loader">
     <div class="vv-loader-inner">
       <div id="vv-loader-counter" class="vv-loader-counter">0%</div>
@@ -20,7 +20,6 @@
   </div>
 
   <div class="page">
-    <!-- NAVBAR -->
     <header class="nav">
       <div class="nav-left">
         <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
@@ -42,14 +41,13 @@
         <div id="userInfo" class="user-info">
           <img id="userPic" class="user-pic" src="" alt="User" />
           <span id="userName" class="user-name"></span>
-          <!-- Dropdown -->
           <div id="userDropdown" class="user-dropdown">
             <a href="/auth/logout" class="dropdown-item">Log out</a>
           </div>
         </div>
         <a href="/login" class="btn-outline" id="loginBtn">Login</a>
 
-        <!-- Mobile / small-screen nav toggle -->
+        
         <button id="navToggle" class="nav-toggle" type="button" aria-label="Toggle navigation">
           ☰
         </button>
@@ -57,9 +55,9 @@
 
     </header>
 
-    <!-- HERO -->
+
     <section class="hero">
-      <!-- Animated Background Elements -->
+
       <div class="hero-bg-flow">
         <div class="flow-blob flow-1"></div>
         <div class="flow-blob flow-2"></div>
@@ -95,7 +93,7 @@
         </div>
       </div>
 
-      <!-- Right side logo -->
+   
       <div class="hero-right">
         <div class="hero-logo-wrap">
           <img src="hero-image.png" alt="Vivid Vision Logo" class="hero-logo-img" />
@@ -103,7 +101,7 @@
       </div>
     </section>
 
-    <!-- PRODUCTS -->
+
     <section id="products" class="section">
       <div class="section-header reveal-on-scroll">
         <h2>Featured products</h2>
@@ -118,7 +116,7 @@
       <div id="productGrid" class="product-grid"></div>
     </section>
 
-    <!-- WHY US -->
+  
     <section id="why-us" class="section">
       <div class="section-header reveal-on-scroll">
         <h2>Why customers choose Vivid Vision</h2>
@@ -149,7 +147,6 @@
       </div>
     </section>
 
-    <!-- FAQ -->
     <section id="faq" class="section section-faq">
       <div class="section-header reveal-on-scroll">
         <h2>FAQ</h2>
@@ -180,7 +177,6 @@
 
     </section>
 
-    <!-- FOOTER -->
     <footer class="footer">
       <div class="footer-left">
         <div class="footer-brand">Vivid Vision</div>
@@ -198,7 +194,6 @@
     </footer>
   </div>
 
-  <!-- CART DRAWER -->
   <div id="cartOverlay" class="cart-overlay hidden"></div>
   <aside id="cartDrawer" class="cart-drawer">
     <div class="cart-header">
@@ -211,19 +206,19 @@
         <span id="cartSubtotal">Rs. 0</span>
       </div>
 
-      <!-- Button that hides the drawer -->
+
       <button id="hideCartBtn" class="btn-outline cart-hide">
         Continue browsing
       </button>
 
-      <!-- Button that opens WhatsApp checkout -->
+
       <button id="checkoutBtn" class="btn-primary cart-checkout">
         Checkout on WhatsApp
       </button>
     </div>
   </aside>
 
-  <!-- Floating Cart Button -->
+ 
   <button id="cartBtn" class="cart-fab">
     <span id="cartCount" class="cart-count">0</span>
     <span>Cart</span>

@@ -1,8 +1,4 @@
-// public/admin.js
-// Admin UI (defensive fetch + uses modal helpers)
-
 (() => {
-  // small utility: safe json parsing with content-type check
   async function fetchJson(url, opts = {}) {
     const res = await fetch(url, opts);
     if (!res.ok) {
@@ -21,7 +17,6 @@
     return res.json();
   }
 
-  // Tabs & panels
   const tabsEl = document.getElementById("tabs");
   const panels = {
     users: document.getElementById("panel-users"),
@@ -56,7 +51,6 @@
     loadBanned();
   });
 
-  // ---------- USERS ----------
   const userSearch = document.getElementById("userSearch");
   const usersTbody = document.getElementById("usersTbody");
   const userPrev = document.getElementById("userPrev");
@@ -418,7 +412,6 @@
     }
   });
 
-  // ---------- PRODUCTS ----------
   const productsTbody = document.getElementById("productsTbody");
   const productSearch = document.getElementById("productSearch");
   const createProductBtn = document.getElementById("createProductBtn");
@@ -451,7 +444,6 @@
       productsTbody.appendChild(tr);
     });
 
-    // delete handlers
     productsTbody.querySelectorAll("[data-action='delete']").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
@@ -468,7 +460,6 @@
       });
     });
 
-    // edit handlers
     productsTbody.querySelectorAll("[data-action='edit']").forEach(btn => {
       btn.addEventListener("click", () => {
         const pid = btn.dataset.id;
@@ -841,7 +832,6 @@
     loadProducts();
   }
 
-  // ---------- COMMENTS ----------
   const commentsTbody = document.getElementById("commentsTbody");
   const commentFilter = document.getElementById("commentFilter");
   const refreshCommentsBtn = document.getElementById("refreshComments");
@@ -969,7 +959,6 @@
     }
   });
 
-  // ---------- STATISTICS ----------
   const statsWrap = document.getElementById("statsWrap");
   async function loadStats() {
     try {
@@ -999,7 +988,6 @@
     }
   }
 
-  // ---------- DEVELOPER ----------
   document.getElementById("sendDev").addEventListener("click", async () => {
     const webhook = document.getElementById("devWebhook").value.trim();
     const message = document.getElementById("devMessage").value.trim();
@@ -1024,7 +1012,6 @@
     }
   });
 
-  // ---------- BANNED ----------
   const bannedTbody = document.getElementById("bannedTbody");
   async function loadBanned() {
     try {
@@ -1169,17 +1156,14 @@
     }
   }
 
-  // UTIL
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   }
 
-  // LOGOUT
   document.getElementById("logoutBtn").addEventListener("click", () => {
     window.location.href = "/auth/logout";
   });
 
-  // ---------- IMAGE CONVERTER ----------
   const dropZone = document.getElementById("dropZone");
   const converterInput = document.getElementById("converterInput");
   const previewArea = document.getElementById("previewArea");
@@ -1368,7 +1352,6 @@
     });
   }
 
-  // INIT
   document.addEventListener("DOMContentLoaded", () => {
     showTab("users");
 

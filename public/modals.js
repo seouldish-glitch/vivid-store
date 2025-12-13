@@ -1,12 +1,12 @@
-// public/modals.js
-// Lightweight modal + confirm + toast toolkit for admin panel
+
+
 (function () {
   function createModals() {
-    // avoid double-init
+    
     if (window.__vv_modals_inited) return;
     window.__vv_modals_inited = true;
 
-    // styles
+    
     const css = `
 #vv-modal-backdrop { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); z-index:9999; }
 #vv-modal { width:min(780px,96vw); background:#fff; border-radius:12px; padding:18px; box-shadow:0 20px 60px rgba(2,6,23,0.2); font-family:Inter, system-ui, Arial; }
@@ -26,7 +26,7 @@
     style.innerText = css;
     document.head.appendChild(style);
 
-    // markup
+    
     const backdrop = document.createElement("div");
     backdrop.id = "vv-modal-backdrop";
     backdrop.innerHTML = `
@@ -42,17 +42,17 @@
     toasts.id = "vv-toasts";
     document.body.appendChild(toasts);
 
-    // helpers
+    
     function closeModal() {
       backdrop.style.display = "none";
-      // cleanup
+      
       document.getElementById("vv-modal-title").textContent = "";
       document.getElementById("vv-modal-text").innerHTML = "";
       document.getElementById("vv-modal-actions").innerHTML = "";
     }
 
     async function htmlAlert(type = "info", title = "", text = "", opts = {}) {
-      // returns a Promise resolved when user clicks OK/Close
+      
       return new Promise((resolve) => {
         const actions = document.getElementById("vv-modal-actions");
         const titleEl = document.getElementById("vv-modal-title");
@@ -67,7 +67,7 @@
         ok.className = "vv-btn";
         ok.textContent = opts.okText || "OK";
         ok.onclick = () => {
-          // Call beforeClose callback if provided
+          
           if (opts.beforeClose && typeof opts.beforeClose === "function") {
             opts.beforeClose();
           }
@@ -82,7 +82,7 @@
           resolve(false);
         };
 
-        // choose buttons: if opts.onlyOk then show only ok
+        
         if (opts.onlyOk) actions.appendChild(ok);
         else {
           actions.appendChild(cancel);
@@ -113,7 +113,7 @@
         t.style.opacity = 0;
         t.style.transform = "translateY(8px)";
         setTimeout(() => {
-          // Check if toast is still a child before removing
+          
           if (container && t.parentNode === container) {
             container.removeChild(t);
           }
@@ -122,13 +122,13 @@
       return t;
     }
 
-    // expose to window
+    
     window.htmlAlert = htmlAlert;
     window.htmlConfirm = htmlConfirm;
     window.htmlToast = htmlToast;
   }
 
-  // Ensure DOM is ready before init
+  
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", createModals);
   } else {

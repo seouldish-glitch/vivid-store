@@ -15,7 +15,6 @@
         frame-src https://www.google.com https://www.google.lk;
       " />
 
-  <!-- PAGE-SPECIFIC CSS -->
   <style>
     :root {
       --bg: #050509;
@@ -37,14 +36,12 @@
         sans-serif;
       background: var(--bg);
       color: var(--text);
-      /* Initial state for blur-in effect */
       opacity: 0;
       filter: blur(10px);
       animation: blurInPage 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.1s;
     }
 
-    /* Page blur-in animation */
     @keyframes blurInPage {
       0% {
         opacity: 0;
@@ -59,7 +56,6 @@
       }
     }
 
-    /* Slide-in from bottom animation */
     @keyframes slideInUp {
       0% {
         opacity: 0;
@@ -73,8 +69,6 @@
         filter: blur(0);
       }
     }
-
-    /* Slide-in from left animation */
     @keyframes slideInLeft {
       0% {
         opacity: 0;
@@ -89,7 +83,6 @@
       }
     }
 
-    /* Slide-in from right animation */
     @keyframes slideInRight {
       0% {
         opacity: 0;
@@ -104,7 +97,6 @@
       }
     }
 
-    /* Fade and scale animation */
     @keyframes fadeInScale {
       0% {
         opacity: 0;
@@ -128,7 +120,6 @@
       background: var(--bg);
     }
 
-    /* NAVBAR */
 
     .nav {
       position: sticky;
@@ -141,7 +132,6 @@
       background: rgba(5, 5, 9, 0.96);
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(18px);
-      /* Navbar animation */
       opacity: 0;
       transform: translateY(-20px);
       animation: slideInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -254,7 +244,6 @@
       }
     }
 
-    /* GENERIC SECTIONS */
 
     .section {
       max-width: 1200px;
@@ -262,12 +251,10 @@
       padding: 22px 24px;
     }
 
-    /* CONTACT PAGE LAYOUT */
 
     .contact-heading {
       text-align: center;
       margin-bottom: 10px;
-      /* Heading animation */
       opacity: 0;
       animation: fadeInScale 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.4s;
@@ -300,17 +287,14 @@
       border: 1px solid var(--border);
       padding: 20px 22px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
-      /* Initial hidden state */
       opacity: 0;
     }
 
-    /* Form card slides in from left */
     .contact-form-card {
       animation: slideInLeft 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.6s;
     }
 
-    /* Info card slides in from right */
     .contact-info-card {
       animation: slideInRight 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.7s;
@@ -327,7 +311,6 @@
       margin: 0 0 16px;
     }
 
-    /* BUTTONS */
 
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
@@ -356,7 +339,6 @@
       margin-top: 4px;
     }
 
-    /* FORM FIELDS */
 
     .contact-form .form-field {
       margin-bottom: 12px;
@@ -390,7 +372,6 @@
       transform: translateY(-1px);
     }
 
-    /* Hide Chrome contact/credentials icons */
     input::-webkit-contacts-auto-fill-button,
     input::-webkit-credentials-auto-fill-button {
       visibility: hidden !important;
@@ -400,7 +381,6 @@
       height: 0 !important;
     }
 
-    /* CONTACT INFO SIDE */
 
     .info-section {
       margin-bottom: 18px;
@@ -431,7 +411,6 @@
       color: var(--accent-strong);
     }
 
-    /* WHATSAPP BUTTON: BLACK / WHITE */
     .whatsapp-btn {
       margin-top: 4px;
       text-align: center;
@@ -452,14 +431,10 @@
       box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
     }
 
-
-    /* MAP */
-
     .contact-map {
       max-width: 1200px;
       padding-top: 10px;
       padding-bottom: 32px;
-      /* Map animation */
       opacity: 0;
       animation: slideInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.9s;
@@ -496,8 +471,6 @@
       transform: scale(1.01);
     }
 
-    /* STATUS TEXT */
-
     .contact-status {
       margin-top: 8px;
       font-size: 12px;
@@ -513,7 +486,6 @@
       color: #f97373;
     }
 
-    /* FOOTER */
 
     .footer {
       border-top: 1px solid var(--border);
@@ -524,13 +496,11 @@
       justify-content: space-between;
       max-width: 1200px;
       margin: 0 auto;
-      /* Footer animation */
       opacity: 0;
       animation: fadeInScale 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 1.1s;
     }
 
-    /* RESPONSIVE */
 
     @media (max-width: 900px) {
       .contact-grid {
@@ -548,7 +518,6 @@
       }
     }
 
-    /* Reduce motion for users who prefer it */
     @media (prefers-reduced-motion: reduce) {
 
       *,
@@ -560,10 +529,10 @@
       }
     }
   </style>
+  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body class="product-page-body">
-  <!-- NAVBAR -->
   <header class="nav">
     <div class="nav-left">
       <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
@@ -584,16 +553,13 @@
     </div>
   </header>
 
-  <!-- PAGE HEADING -->
   <section class="section contact-heading">
     <h1>Contact us</h1>
     <p>Feel free to contact us using the form below.</p>
   </section>
 
-  <!-- MAIN CONTACT CONTENT -->
   <main class="section contact-wrapper">
     <div class="contact-grid">
-      <!-- LEFT FORM -->
       <div class="contact-card contact-form-card">
         <h2 class="contact-title">Send us a message</h2>
         <p class="contact-desc">
@@ -636,7 +602,6 @@
         </form>
       </div>
 
-      <!-- RIGHT INFO -->
       <div class="contact-card contact-info-card">
         <h2 class="contact-title">Our contact information</h2>
         <p class="contact-desc">
@@ -678,7 +643,6 @@
     </div>
   </main>
 
-  <!-- MAP SECTION -->
   <section class="section contact-map">
     <div class="contact-map-card">
       <h2>Find us on the map</h2>
@@ -687,19 +651,14 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
   <footer class="footer">
     <div>© <span id="year"></span> Vivid Vision. All rights reserved.</div>
     <div class="footer-right">The Vision of the Energy</div>
   </footer>
 
   <script>
-    // Set year
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // ========================================
-    // TYPEWRITER EFFECT FOR PLACEHOLDERS
-    // ========================================
     class TypewriterPlaceholder {
       constructor(element, texts, options = {}) {
         this.element = element;
@@ -714,10 +673,9 @@
         this.isDeleting = false;
         this.isTyping = false;
 
-        // Store original placeholder
+     
         this.originalPlaceholder = element.getAttribute('placeholder') || '';
 
-        // Don't animate if user is focused on the field
         this.element.addEventListener('focus', () => {
           this.isTyping = false;
           this.element.setAttribute('placeholder', this.originalPlaceholder);
@@ -744,7 +702,6 @@
         const currentText = this.texts[this.currentTextIndex];
 
         if (this.isDeleting) {
-          // Deleting characters
           this.currentCharIndex--;
           this.element.setAttribute('placeholder', currentText.substring(0, this.currentCharIndex));
 
@@ -757,17 +714,14 @@
 
           setTimeout(() => this.type(), this.deletingSpeed);
         } else {
-          // Typing characters
           this.currentCharIndex++;
           this.element.setAttribute('placeholder', currentText.substring(0, this.currentCharIndex));
 
           if (this.currentCharIndex === currentText.length) {
-            // Finished typing current text
             if (this.texts.length > 1) {
               this.isDeleting = true;
               setTimeout(() => this.type(), this.delayBeforeDelete);
             } else {
-              // Only one text, don't delete
               this.isTyping = false;
             }
             return;
@@ -778,9 +732,8 @@
       }
     }
 
-    // Initialize typewriter effects for all form fields
     document.addEventListener('DOMContentLoaded', () => {
-      // Name field
+    
       const nameInput = document.querySelector('input[name="name"]');
       if (nameInput) {
         new TypewriterPlaceholder(nameInput, [
@@ -790,7 +743,6 @@
         ], { typingSpeed: 70, deletingSpeed: 35 });
       }
 
-      // Email field
       const emailInput = document.querySelector('input[name="email"]');
       if (emailInput) {
         new TypewriterPlaceholder(emailInput, [
@@ -800,7 +752,6 @@
         ], { typingSpeed: 60, deletingSpeed: 30 });
       }
 
-      // Phone field
       const phoneInput = document.querySelector('input[name="phone"]');
       if (phoneInput) {
         new TypewriterPlaceholder(phoneInput, [
@@ -810,7 +761,6 @@
         ], { typingSpeed: 65, deletingSpeed: 32 });
       }
 
-      // Subject field
       const subjectInput = document.querySelector('input[name="subject"]');
       if (subjectInput) {
         new TypewriterPlaceholder(subjectInput, [
@@ -821,7 +771,6 @@
         ], { typingSpeed: 75, deletingSpeed: 38, delayBeforeDelete: 2000 });
       }
 
-      // Message textarea
       const messageTextarea = document.querySelector('textarea[name="message"]');
       if (messageTextarea) {
         new TypewriterPlaceholder(messageTextarea, [
@@ -833,7 +782,6 @@
       }
     });
 
-    // Contact form -> POST /api/contact -> Discord
     const form = document.getElementById("contactForm");
     const statusEl = document.getElementById("contactStatus");
 

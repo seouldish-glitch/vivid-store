@@ -1,4 +1,4 @@
-/* Admin Dashboard Theme - Dark/Neon */
+
 :root {
     --bg-dark: #0f1015;
     --bg-panel: #181920;
@@ -30,7 +30,7 @@ body {
     overflow: hidden;
 }
 
-/* Sidebar */
+
 .sidebar {
     width: 250px;
     background-color: var(--bg-sidebar);
@@ -97,7 +97,7 @@ body {
     border-top: 1px solid var(--border);
 }
 
-/* Main Content */
+
 .main-content {
     flex: 1;
     display: flex;
@@ -131,7 +131,7 @@ body {
     overflow-y: auto;
 }
 
-/* Panels */
+
 .panel {
     animation: fadeIn 0.3s ease;
 }
@@ -148,7 +148,7 @@ body {
     }
 }
 
-/* Cards & Containers */
+
 .card-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -179,7 +179,7 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Data Tables */
+
 .table-container {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -217,7 +217,7 @@ tr:hover td {
     background: rgba(255, 255, 255, 0.02);
 }
 
-/* Controls */
+
 .flex-row {
     display: flex;
     justify-content: space-between;
@@ -227,7 +227,7 @@ tr:hover td {
 
 .input {
     background: rgba(255, 255, 255, 0.05);
-    /* Lighter background */
+   
     border: 1px solid var(--border);
     color: #fff;
     padding: 10px 16px;
@@ -240,7 +240,7 @@ tr:hover td {
     outline: none;
     border-color: var(--accent);
     background: rgba(255, 255, 255, 0.08);
-    /* Even lighter on focus */
+   
 }
 
 .vv-btn {
@@ -263,7 +263,7 @@ tr:hover td {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #ffffff !important;
-    /* Force white text */
+   
 }
 
 .vv-btn.ghost:hover {
@@ -281,7 +281,7 @@ tr:hover td {
     background: rgba(239, 68, 68, 0.25);
 }
 
-/* Modals */
+
 #vv-modal-backdrop {
     background: rgba(0, 0, 0, 0.8) !important;
     backdrop-filter: blur(4px);
@@ -291,7 +291,7 @@ tr:hover td {
     background: var(--bg-panel) !important;
     border: 1px solid var(--border) !important;
     color: #fff !important;
-    /* Make it big like full screen */
+   
     width: 90% !important;
     max-width: 1000px !important;
     max-height: 90vh !important;
@@ -304,7 +304,7 @@ tr:hover td {
     color: var(--text-muted) !important;
 }
 
-/* Thumbnails */
+
 .thumb {
     width: 48px;
     height: 48px;
@@ -313,9 +313,9 @@ tr:hover td {
     border: 1px solid var(--border);
 }
 
-/* ... previous code ... */
 
-/* Fire Loader */
+
+
 #fire-loader {
     position: fixed;
     inset: 0;
