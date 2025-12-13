@@ -1,1 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+  <meta charset="UTF-8" />
+  <title>Vivid Vision | Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- LOADING OVERLAY -->
+  <div id="vv-loader" class="vv-loader">
+    <div class="vv-loader-inner">
+      <div id="vv-loader-counter" class="vv-loader-counter">0%</div>
+      <div class="vv-loader-bar">
+        <div id="vv-loader-bar-fill" class="vv-loader-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+    <!-- NAVBAR -->
+    <header class="nav">
+      <div class="nav-left">
+        <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
+        <div class="nav-title">
+          <span class="nav-brand">VIVID VISION</span>
+          <span class="nav-subtitle">Solar · Security · Smart Systems</span>
+        </div>
+      </div>
+
+      <nav class="nav-links nav-center">
+        <a href="/" class="nav-link">Home</a>
+        <a href="#products" class="nav-link">Products</a>
+        <a href="#why-us" class="nav-link">Why us</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+        <a href="/contact" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-right">
+        <div id="userInfo" class="user-info">
+          <img id="userPic" class="user-pic" src="" alt="User" />
+          <span id="userName" class="user-name"></span>
+          <!-- Dropdown -->
+          <div id="userDropdown" class="user-dropdown">
+            <a href="/auth/logout" class="dropdown-item">Log out</a>
+          </div>
+        </div>
+        <a href="/login" class="btn-outline" id="loginBtn">Login</a>
+
+        <!-- Mobile / small-screen nav toggle -->
+        <button id="navToggle" class="nav-toggle" type="button" aria-label="Toggle navigation">
+          ☰
+        </button>
+      </div>
+
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <!-- Animated Background Elements -->
+      <div class="hero-bg-flow">
+        <div class="flow-blob flow-1"></div>
+        <div class="flow-blob flow-2"></div>
+        <div class="flow-blob flow-3"></div>
+      </div>
+
+      <div class="hero-left">
+        <div class="hero-pill">Sri Lanka’s modern solar & security store</div>
+        <h1>
+          Experience next level
+          <span class="hero-highlight">safety</span>
+          with Vivid Vision
+        </h1>
+        <p class="hero-text" id="heroTypewriter">
+          Vivid Vision brings you curated solar, CCTV, and smart solutions –
+          built for speed, reliability, and long-term support.
+        </p>
+        <div class="hero-actions">
+          <a href="#products" class="btn-primary">Browse products</a>
+          <a href="https://wa.me/94XXXXXXXXX" target="_blank" rel="noopener noreferrer" class="btn-outline">
+            Chat on WhatsApp
+          </a>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Response time</div>
+            <div class="hero-meta-value">Under <span class="hero-highlight">60</span> min</div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Trusted installs</div>
+            <div class="hero-meta-value">Across <span class="hero-highlight">Sri Lanka</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side logo -->
+      <div class="hero-right">
+        <div class="hero-logo-wrap">
+          <img src="hero-image.png" alt="Vivid Vision Logo" class="hero-logo-img" />
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products" class="section">
+      <div class="section-header reveal-on-scroll">
+        <h2>Featured products</h2>
+        <p>Carefully selected, installed, and supported by Vivid Vision.</p>
+      </div>
+
+
+      <div class="products-toolbar">
+        <input id="searchInput" type="text" class="search-input" placeholder="Search by name, feature, or tag..." />
+      </div>
+
+      <div id="productGrid" class="product-grid"></div>
+    </section>
+
+    <!-- WHY US -->
+    <section id="why-us" class="section">
+      <div class="section-header reveal-on-scroll">
+        <h2>Why customers choose Vivid Vision</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-card reveal-on-scroll">
+          <h3>Engineering first</h3>
+          <p>
+            We design systems with performance and safety first – not just the
+            lowest cost.
+          </p>
+        </div>
+        <div class="why-card reveal-on-scroll">
+          <h3>End-to-end service</h3>
+          <p>
+            From site visit to wiring, installation, and aftercare, we handle
+            everything.
+          </p>
+        </div>
+        <div class="why-card reveal-on-scroll">
+          <h3>Fast support</h3>
+          <p>
+            Need help? We’re reachable on WhatsApp, phone, and email with
+            rapid response.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section section-faq">
+      <div class="section-header reveal-on-scroll">
+        <h2>FAQ</h2>
+      </div>
+      <div class="faq-grid">
+        <div class="faq-item reveal-on-scroll">
+          <h3>Do you handle installation?</h3>
+          <p>
+            Yes. All systems can be supplied + installed by our own or partner
+            teams.
+          </p>
+        </div>
+        <div class="faq-item reveal-on-scroll">
+          <h3>Can I finance the system?</h3>
+          <p>
+            We can connect you with banks and leasing partners for solar
+            systems.
+          </p>
+        </div>
+        <div class="faq-item reveal-on-scroll">
+          <h3>Do you give warranties?</h3>
+          <p>
+            Yes – all systems come with manufacturer warranties and install
+            workmanship guarantees.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-left">
+        <div class="footer-brand">Vivid Vision</div>
+        <div class="footer-text">
+          Solar · Security · Smart Systems<br />
+          © <span id="year"></span> Vivid Vision. All rights reserved.
+        </div>
+      </div>
+      <div class="footer-right">
+        <a href="/contact" class="footer-link">Contact</a>
+        <a href="https://wa.me/94XXXXXXXXX" class="footer-link" target="_blank" rel="noopener noreferrer">
+          WhatsApp
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- CART DRAWER -->
+  <div id="cartOverlay" class="cart-overlay hidden"></div>
+  <aside id="cartDrawer" class="cart-drawer">
+    <div class="cart-header">
+      <h2>Your cart</h2>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-subtotal">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">Rs. 0</span>
+      </div>
+
+      <!-- Button that hides the drawer -->
+      <button id="hideCartBtn" class="btn-outline cart-hide">
+        Continue browsing
+      </button>
+
+      <!-- Button that opens WhatsApp checkout -->
+      <button id="checkoutBtn" class="btn-primary cart-checkout">
+        Checkout on WhatsApp
+      </button>
+    </div>
+  </aside>
+
+  <!-- Floating Cart Button -->
+  <button id="cartBtn" class="cart-fab">
+    <span id="cartCount" class="cart-count">0</span>
+    <span>Cart</span>
+  </button>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

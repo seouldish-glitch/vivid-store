@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Account Banned | Vivid Vision</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg-dark: #020617;
+      --glass-bg: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --danger: #dc2626;
+      --danger-light: #ef4444;
+      --muted: #9ca3af;
+      --text: #f9fafb;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(160deg, #020617 0%, #000 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Red glow effect */
+    .glow-blob {
+      position: fixed;
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(220, 38, 38, 0.3), rgba(220, 38, 38, 0.05));
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      filter: blur(140px);
+      z-index: -1;
+      animation: pulseGlow 5s infinite ease-in-out alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: translateX(-50%) scale(1); opacity: 0.5; }
+      100% { transform: translateX(-50%) scale(1.25); opacity: 0.3; }
+    }
+
+    /* Centering */
+    .banned-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+
+    /* Glowing floating glass card */
+    .banned-card {
+      width: 100%;
+      max-width: 500px;
+      padding: 32px 28px;
+      border-radius: 22px;
+
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(160%);
+
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      box-shadow:
+        0 0 25px rgba(220, 38, 38, 0.15),
+        0 0 120px rgba(220, 38, 38, 0.2),
+        inset 0 0 14px rgba(220, 38, 38, 0.1);
+
+      animation: floatCard 4.5s ease-in-out infinite;
+    }
+
+    @keyframes floatCard {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+
+    /* Icon */
+    .ban-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(220, 38, 38, 0.2);
+      border-radius: 50%;
+      border: 2px solid var(--danger);
+    }
+
+    .ban-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: var(--danger);
+    }
+
+    /* Headings */
+    .banned-heading {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--danger-light);
+    }
+
+    .banned-subtext {
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    /* Email display */
+    .email-display {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 12px;
+    }
+
+    .email-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .email-value {
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    /* Reason box */
+    .reason-box {
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid rgba(220, 38, 38, 0.3);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .reason-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .reason-text {
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Button */
+    .back-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(220, 38, 38, 0.2);
+      border: 1px solid var(--danger);
+      border-radius: 999px;
+      font-size: 14px;
+      color: var(--danger-light);
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(220, 38, 38, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Footer */
+    .footer-text {
+      text-align: center;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-text a {
+      color: var(--danger-light);
+      text-decoration: none;
+    }
+
+    .footer-text a:hover {
+      text-decoration: underline;
+    }
+
+    /* Ban details */
+    .ban-details {
+      background: rgba(220, 38, 38, 0.05);
+      border: 1px solid rgba(220, 38, 38, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .detail-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .detail-label {
+      color: var(--muted);
+    }
+
+    .detail-value {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Red glow lighting -->
+  <div class="glow-blob"></div>
+
+  <div class="banned-wrapper">
+    <div class="banned-card">
+      <div id="loadingState" class="loading">
+        Loading ban information...
+      </div>
+
+      <div id="contentState" style="display: none;">
+        <div class="ban-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+        </div>
+
+        <h1 class="banned-heading">You Have Been Banned</h1>
+        <p class="banned-subtext">
+          Your account has been banned from accessing this site.
+        </p>
+
+        <div class="email-display">
+          <div class="email-label">Banned Account</div>
+          <div class="email-value" id="bannedEmail">-</div>
+        </div>
+
+        <div class="reason-box">
+          <div class="reason-label">Reason for Ban</div>
+          <div class="reason-text" id="banReason">Violation of terms</div>
+        </div>
+
+        <div class="ban-details" id="banDetails" style="display:none;">
+          <div class="detail-item">
+            <span class="detail-label">Banned on:</span>
+            <span class="detail-value" id="bannedAt">-</span>
+          </div>
+          <div class="detail-item" id="expiresItem" style="display:none;">
+            <span class="detail-label">Expires on:</span>
+            <span class="detail-value" id="expiresAt">-</span>
+          </div>
+          <div class="detail-item" id="permanentItem" style="display:none;">
+            <span class="detail-label">Ban Type:</span>
+            <span class="detail-value">Permanent</span>
+          </div>
+        </div>
+
+        <button class="back-btn" onclick="window.location.href='/auth/logout'">
+          Return to Home
+        </button>
+
+        <p class="footer-text">
+          If you believe this is an error, please <a href="/contact">contact support</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load ban information
+    (async () => {
+      try {
+        const response = await fetch('/api/ban-info', { credentials: 'include' });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Show content
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('contentState').style.display = 'block';
+          
+          // Display email
+          const emailEl = document.getElementById('bannedEmail');
+          if (data.email) {
+            emailEl.textContent = data.email;
+          } else if (data.bannedEmail) {
+            emailEl.textContent = data.bannedEmail;
+          } else {
+            emailEl.textContent = 'Unknown';
+          }
+          
+          // Display reason
+          if (data.reason) {
+            document.getElementById('banReason').textContent = data.reason;
+          }
+          
+          // Show ban details
+          const banDetails = document.getElementById('banDetails');
+          banDetails.style.display = 'block';
+          
+          if (data.bannedAt) {
+            const bannedDate = new Date(data.bannedAt);
+            document.getElementById('bannedAt').textContent = bannedDate.toLocaleDateString() + ' ' + bannedDate.toLocaleTimeString();
+          }
+          
+          // Show expiration if temporary ban
+          if (data.expiresAt && data.banType === 'temporary') {
+            const expiresDate = new Date(data.expiresAt);
+            const now = new Date();
+            const expiresItem = document.getElementById('expiresItem');
+            expiresItem.style.display = 'flex';
+            document.getElementById('expiresAt').textContent = expiresDate.toLocaleDateString() + ' ' + expiresDate.toLocaleTimeString();
+            
+            // Show time remaining
+            const timeRemaining = expiresDate - now;
+            if (timeRemaining > 0) {
+              const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+              const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              document.getElementById('expiresAt').textContent += ` (${days}d ${hours}h remaining)`;
+            }
+          } else {
+            document.getElementById('permanentItem').style.display = 'flex';
+          }
+        } else {
+          // If API fails, show error
+          document.getElementById('loadingState').textContent = 'Failed to load ban information.';
+        }
+      } catch (err) {
+        console.error('Failed to load ban info', err);
+        document.getElementById('loadingState').textContent = 'Failed to load ban information.';
+      }
+    })();
+  </script>
+</body>
+</html>
+

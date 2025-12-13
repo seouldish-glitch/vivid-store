@@ -1,0 +1,290 @@
+/* =======================================================
+   Vivid Vision – Product page premium comments & Neon Glow
+   ======================================================= */
+
+/* BACKGROUND BLOB ANIMATION (The "Fire" Glow) */
+.glow-blob {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(245, 200, 76, 0.15), rgba(245, 200, 76, 0.02));
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  filter: blur(100px);
+  z-index: -1;
+  pointer-events: none;
+  animation: pulseGlow 8s infinite ease-in-out alternate;
+}
+
+@keyframes pulseGlow {
+  0% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translateX(-50%) scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Glassy Card Override for Detail Container */
+.detail-container {
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.6);
+  /* Transparent dark base */
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    inset 0 0 20px rgba(245, 200, 76, 0.03);
+  /* Subtle internal gold glow */
+  padding: 24px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle accent line on top of the card */
+.detail-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 200, 76, 0.5), transparent);
+}
+
+/* Glassy Comment Section */
+.comments-section {
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+
+/* Comment Form Container - Glassy & Premium */
+.comment-form-card {
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 27, 46, 0.7), rgba(9, 12, 18, 0.8));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 6px;
+  /* Inner padding for the "frame" feel */
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  margin-bottom: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.comment-form-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(245, 200, 76, 0.3);
+  /* Subtle gold ring */
+}
+
+/* Textarea styling */
+.comment-input {
+  width: 100%;
+  min-height: 100px;
+  background: transparent;
+  border: none;
+  color: #f3f4f6;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+}
+
+.comment-input::placeholder {
+  color: rgba(156, 163, 175, 0.6);
+  transition: opacity 0.2s;
+}
+
+.comment-input:focus::placeholder {
+  opacity: 0.4;
+}
+
+/* Bottom Action Bar (Submit button + Status) */
+.comment-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.comment-status {
+  font-size: 13px;
+  font-weight: 500;
+  padding-left: 4px;
+  opacity: 0.9;
+}
+
+/* Submit Button - Neumorphic/Glassy Gold */
+#commentSubmit {
+  background: linear-gradient(135deg, #f5c84c 0%, #d97706 100%);
+  color: #111827;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  box-shadow:
+    0 4px 12px rgba(245, 200, 76, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#commentSubmit:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 16px rgba(245, 200, 76, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  filter: brightness(1.05);
+}
+
+#commentSubmit:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+#commentSubmit svg {
+  width: 16px;
+  height: 16px;
+}
+
+
+/* Gold name for admins */
+.comment-name-admin {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+/* Small pill badge for admins (and admin replies) */
+.comment-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px 2px;
+  margin-left: 4px;
+  border-radius: 999px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--accent-strong);
+}
+
+/* Indent replies slightly + left border */
+.comment-item-reply {
+  margin-left: 24px;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent-soft);
+}
+
+/* "Replying to X" label under meta row */
+.comment-reply-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+/* Icon buttons – reply + delete */
+.comment-delete,
+.comment-reply {
+  margin-left: 4px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+/* Hover states (desktop) */
+.comment-delete:hover,
+.comment-reply:hover {
+  background: rgba(15, 23, 42, 0.9);
+  transform: translateY(-0.5px);
+}
+
+.comment-delete:hover {
+  color: var(--danger);
+}
+
+.comment-reply:hover {
+  color: var(--accent-strong);
+}
+
+/* =======================================================
+   Mobile tweaks – make it comfy on phones
+   ======================================================= */
+
+@media (max-width: 768px) {
+  .comments-section {
+    padding: 14px 12px;
+    border-radius: var(--radius-lg);
+  }
+
+  .comment-item,
+  .comment-item-reply {
+    padding: 8px 8px;
+  }
+
+  .comment-item-reply {
+    margin-left: 16px;
+    padding-left: 6px;
+  }
+
+  .comment-avatar {
+    width: 24px;
+    height: 24px;
+  }
+
+  .comment-meta {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+
+  .comment-delete,
+  .comment-reply {
+    font-size: 11px;
+    padding: 0 2px;
+    margin-left: 2px;
+  }
+
+  .comment-text {
+    font-size: 12px;
+  }
+
+  .comment-input {
+    font-size: 13px;
+  }
+}
