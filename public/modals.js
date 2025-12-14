@@ -9,169 +9,139 @@
 
 const css = `
 #vv-modal-backdrop { 
-  position:fixed; inset:0; display:none; align-items:center; justify-content:center; 
-  background:rgba(0,0,0,0.8); z-index:9999; backdrop-filter: blur(8px);
-  padding: 16px;
+  position:fixed; top:0; left:0; right:0; bottom:0; 
+  display:none; align-items:center; justify-content:center; 
+  background:rgba(0,0,0,0.85); z-index:9999; backdrop-filter: blur(5px);
+  padding: 10px; /* Safety padding */
 }
 
 #vv-modal { 
-  width: min(420px, 90vw); /* Much smaller width */
+  width: 100%;
+  max-width: 400px;
   max-height: 85vh;
   overflow-y: auto;
+  
   background: #11111a; 
   border: 1px solid rgba(255,255,255,0.08); 
-  border-radius: 16px; /* Smaller radius */
-  padding: 20px 24px; /* Tighter padding */
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6); 
+  border-radius: 16px; 
+  padding: 20px; 
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7); 
+  
   font-family: inherit; 
   color: #f9fafb;
-  animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalPop {
-  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  from { opacity: 0; transform: scale(0.94) translateY(4px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 #vv-modal h3 { 
-  margin: 0 0 10px 0; 
-  font-size: 1.15rem; /* Smaller title */
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.01em;
+  margin: 0 0 8px 0; 
+  font-size: 1.1rem; 
+  font-weight: 600; 
+  color: #fff; 
+  letter-spacing: -0.01em; 
 }
 
 #vv-modal .vv-body { 
   margin-bottom: 20px; 
-  color: #9ca3af; 
-  font-size: 0.9rem; /* Smaller body text */
+  color: #cbd5e1; 
+  font-size: 0.9rem; 
   line-height: 1.5; 
 }
 
 #vv-modal .vv-actions { 
   display: flex; 
-  gap: 10px; 
+  gap: 8px; 
   justify-content: flex-end; 
-  margin-top: 20px;
 }
 
 .vv-btn { 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 18px; /* Smaller buttons */
-  border-radius: 999px; 
+  padding: 8px 16px; 
+  border-radius: 8px; /* Slightly tighter radius */
   border: 0; 
   cursor: pointer; 
   font-weight: 600; 
-  font-size: 0.85rem;
+  font-size: 0.85rem; 
   background: #f5c84c; 
-  color: #000; 
-  transition: all 0.2s ease;
+  color: #050509; 
+  transition: all 0.15s ease;
 }
 
-.vv-btn:hover { 
-  transform: translateY(-1px); 
-  box-shadow: 0 4px 12px rgba(245, 200, 76, 0.25);
-}
-
-.vv-btn:active {
-  transform: translateY(0);
-}
+.vv-btn:active { transform: scale(0.96); }
 
 .vv-btn.ghost { 
   background: transparent; 
-  border: 1px solid rgba(255,255,255,0.15); 
-  color: #e5e7eb; 
+  border: 1px solid rgba(255,255,255,0.1); 
+  color: #e2e8f0; 
 }
 
-.vv-btn.ghost:hover { 
-  background: rgba(255,255,255,0.05); 
-  border-color: #fff;
-  color: #fff;
-  box-shadow: none;
-}
-
-.vv-btn.danger { 
-  background: #ef4444; 
-  color: #fff; 
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
-}
-
-.vv-btn.danger:hover {
-  background: #dc2626;
-  box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
-}
+.vv-btn.danger { background: #ef4444; color: #fff; }
 
 #vv-toasts { 
   position: fixed; 
-  right: 20px; 
-  bottom: 20px; 
+  right: 16px; 
+  bottom: 16px; 
   z-index: 10000; 
   display: flex; 
   flex-direction: column; 
-  gap: 10px; 
+  gap: 8px; 
   pointer-events: none;
 }
 
 .vv-toast { 
   pointer-events: auto;
-  min-width: 220px; 
+  background: #1e1e2d;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
   padding: 12px 16px; 
-  border-radius: 12px; 
-  background: rgba(17, 17, 26, 0.95); 
-  backdrop-filter: blur(12px);
-  color: #fff; 
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+  border-radius: 8px; 
   font-size: 0.85rem; 
-  border: 1px solid rgba(255,255,255,0.08); 
   display: flex;
   align-items: center;
-  animation: toastSlide 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  max-width: 320px;
+  animation: toastSlide 0.25s ease-out;
 }
 
 @keyframes toastSlide {
-  from { opacity: 0; transform: translateY(15px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .vv-toast.success { border-left: 3px solid #10b981; }
 .vv-toast.error { border-left: 3px solid #ef4444; }
 
-/* Mobile Reponsiveness - Tighter margins for small screens */
-@media (max-width: 640px) {
-  #vv-modal { 
-    width: min(340px, 94vw); /* Even smaller on mobile */
-    padding: 20px; 
-    border-radius: 16px;
+/* Mobile Optimizations */
+@media (max-width: 600px) {
+  #vv-modal {
+    margin: 16px; /* Ensure physical margin from screen edges */
+    width: auto; /* Let margin control width */
   }
   
-  #vv-modal h3 {
-    font-size: 1.1rem;
+  #vv-modal .vv-actions {
+    margin-top: 16px;
   }
   
-  #vv-modal .vv-actions { 
-    /* Keep horizontal on mobile if they fit, or wrap */
-    flex-wrap: wrap; 
-    gap: 8px;
-  }
-  
-  .vv-btn { 
-    flex: 1; /* Stretch buttons to fill width available */
+  .vv-btn {
+    flex: 1; /* Full width buttons on tiny screens */
     padding: 10px;
-    font-size: 0.85rem;
   }
-  
+
   #vv-toasts {
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    align-items: center; /* Center toasts on mobile */
+    left: 16px;
+    right: 16px;
+    align-items: center;
   }
   
   .vv-toast {
-    width: auto;
-    max-width: 100%;
+    width: 100%;
     justify-content: center;
   }
 }
