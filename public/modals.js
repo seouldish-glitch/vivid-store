@@ -11,68 +11,68 @@ const css = `
 #vv-modal-backdrop { 
   position:fixed; inset:0; display:none; align-items:center; justify-content:center; 
   background:rgba(0,0,0,0.8); z-index:9999; backdrop-filter: blur(8px);
-  padding: 20px;
+  padding: 16px;
 }
 
 #vv-modal { 
-  width: min(560px, 100%); 
-  max-height: 90vh;
+  width: min(420px, 90vw); /* Much smaller width */
+  max-height: 85vh;
   overflow-y: auto;
   background: #11111a; 
   border: 1px solid rgba(255,255,255,0.08); 
-  border-radius: 24px; 
-  padding: 32px; 
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+  border-radius: 16px; /* Smaller radius */
+  padding: 20px 24px; /* Tighter padding */
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6); 
   font-family: inherit; 
   color: #f9fafb;
-  animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes modalPop {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 #vv-modal h3 { 
-  margin: 0 0 16px 0; 
-  font-size: 1.5rem; 
+  margin: 0 0 10px 0; 
+  font-size: 1.15rem; /* Smaller title */
   font-weight: 600;
   color: #fff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 #vv-modal .vv-body { 
-  margin-bottom: 24px; 
+  margin-bottom: 20px; 
   color: #9ca3af; 
-  font-size: 1rem; 
-  line-height: 1.6; 
+  font-size: 0.9rem; /* Smaller body text */
+  line-height: 1.5; 
 }
 
 #vv-modal .vv-actions { 
   display: flex; 
-  gap: 12px; 
+  gap: 10px; 
   justify-content: flex-end; 
-  margin-top: 32px;
+  margin-top: 20px;
 }
 
 .vv-btn { 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px; 
+  padding: 8px 18px; /* Smaller buttons */
   border-radius: 999px; 
   border: 0; 
   cursor: pointer; 
   font-weight: 600; 
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   background: #f5c84c; 
   color: #000; 
   transition: all 0.2s ease;
 }
 
 .vv-btn:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 8px 16px rgba(245, 200, 76, 0.25);
+  transform: translateY(-1px); 
+  box-shadow: 0 4px 12px rgba(245, 200, 76, 0.25);
 }
 
 .vv-btn:active {
@@ -95,82 +95,83 @@ const css = `
 .vv-btn.danger { 
   background: #ef4444; 
   color: #fff; 
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
 }
 
 .vv-btn.danger:hover {
   background: #dc2626;
-  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
 }
 
 #vv-toasts { 
   position: fixed; 
-  right: 24px; 
-  bottom: 24px; 
+  right: 20px; 
+  bottom: 20px; 
   z-index: 10000; 
   display: flex; 
   flex-direction: column; 
-  gap: 12px; 
+  gap: 10px; 
   pointer-events: none;
 }
 
 .vv-toast { 
   pointer-events: auto;
-  min-width: 260px; 
-  padding: 16px 20px; 
-  border-radius: 16px; 
+  min-width: 220px; 
+  padding: 12px 16px; 
+  border-radius: 12px; 
   background: rgba(17, 17, 26, 0.95); 
   backdrop-filter: blur(12px);
   color: #fff; 
-  box-shadow: 0 15px 30px rgba(0,0,0,0.3); 
-  font-size: 0.9rem; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+  font-size: 0.85rem; 
   border: 1px solid rgba(255,255,255,0.08); 
   display: flex;
   align-items: center;
-  animation: toastSlide 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: toastSlide 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @keyframes toastSlide {
-  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  from { opacity: 0; transform: translateY(15px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.vv-toast.success { border-left: 4px solid #10b981; }
-.vv-toast.error { border-left: 4px solid #ef4444; }
+.vv-toast.success { border-left: 3px solid #10b981; }
+.vv-toast.error { border-left: 3px solid #ef4444; }
 
-/* Mobile Reponsiveness */
+/* Mobile Reponsiveness - Tighter margins for small screens */
 @media (max-width: 640px) {
   #vv-modal { 
-    width: 100%; 
-    padding: 24px; 
-    border-radius: 20px;
-    margin: 10px;
+    width: min(340px, 94vw); /* Even smaller on mobile */
+    padding: 20px; 
+    border-radius: 16px;
   }
   
   #vv-modal h3 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
   
   #vv-modal .vv-actions { 
-    flex-direction: column; 
-    gap: 10px;
+    /* Keep horizontal on mobile if they fit, or wrap */
+    flex-wrap: wrap; 
+    gap: 8px;
   }
   
   .vv-btn { 
-    width: 100%; 
-    padding: 14px;
-    font-size: 1rem;
+    flex: 1; /* Stretch buttons to fill width available */
+    padding: 10px;
+    font-size: 0.85rem;
   }
   
   #vv-toasts {
     left: 20px;
     right: 20px;
     bottom: 20px;
-    align-items: stretch;
+    align-items: center; /* Center toasts on mobile */
   }
   
   .vv-toast {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
     justify-content: center;
   }
 }
