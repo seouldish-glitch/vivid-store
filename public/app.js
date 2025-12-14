@@ -1,4 +1,4 @@
-const WHATSAPP_PHONE = "9477XXXXXXX"; // replace with your number
+const WHATSAPP_PHONE = "94783024455"; // replace with your number
 
 // DOM refs
 const productGrid = document.getElementById("productGrid");
@@ -501,4 +501,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // Observe static scroll elements
   document.querySelectorAll(".reveal-on-scroll").forEach(el => scrollObserver.observe(el));
 });
+
 
