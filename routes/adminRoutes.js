@@ -12,7 +12,18 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const Product = mongoose.model("Product");
 const User = mongoose.model("User");
 const Comment = mongoose.model("Comment");
+const Category = mongoose.model("Category");
+const Order = mongoose.model("Order");
 let BannedUser;
+
+const SUPER_ADMINS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
+function isSuperAdmin(email) {
+  return SUPER_ADMINS.includes(email.toLowerCase());
+}
 try {
   BannedUser = mongoose.model("BannedUser");
 } catch (e) {
@@ -82,6 +93,52 @@ router.get("/users", async (req, res) => {
   } catch (err) {
     console.error("Users list error", err);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.post("/users/:id/promote", async (req, res) => {
+  if (!isSuperAdmin(req.user.email)) {
+    return res.status(403).json({ error: "Only Super Admins can promote users." });
+  }
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { isAdmin: true }, { new: true });
+    await logEvent({
+      category: "ADMIN",
+      action: "USER_PROMOTE",
+      user: { name: req.user.name, email: req.user.email },
+      meta: { promotedUser: user.email }
+    });
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: "Promotion failed" });
+  }
+});
+
+router.post("/users/:id/demote", async (req, res) => {
+  if (!isSuperAdmin(req.user.email)) {
+    return res.status(403).json({ error: "Only Super Admins can demote users." });
+  }
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Prevent demoting main owner
+    if (user.email === "owner@example.com") {
+        return res.status(403).json({ error: "Cannot demote owner" });
+    }
+
+    user.isAdmin = false;
+    await user.save();
+
+    await logEvent({
+      category: "ADMIN",
+      action: "USER_DEMOTE",
+      user: { name: req.user.name, email: req.user.email },
+      meta: { demotedUser: user.email }
+    });
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: "Demotion failed" });
   }
 });
 
@@ -199,6 +256,47 @@ router.get("/products", async (req, res) => {
   }
 });
 
+// Category Routes
+router.get("/categories", async (req, res) => {
+  try {
+    const categories = await Category.find().sort({ name: 1 });
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: "Fetch categories failed" });
+  }
+});
+
+router.post("/categories", async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const category = await Category.create({ name, description });
+    await logEvent({
+      category: "ADMIN",
+      action: "CATEGORY_CREATE",
+      user: { email: req.user.email, name: req.user.name },
+      meta: { categoryId: category._id, name: category.name }
+    });
+    res.json(category);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to create category (name must be unique)" });
+  }
+});
+
+router.delete("/categories/:id", async (req, res) => {
+  try {
+    await Category.findByIdAndDelete(req.params.id);
+    await logEvent({
+      category: "ADMIN",
+      action: "CATEGORY_DELETE",
+      user: { email: req.user.email, name: req.user.name },
+      meta: { categoryId: req.params.id }
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: "Failed to delete category" });
+  }
+});
+
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -224,9 +322,9 @@ router.post(
   },
   async (req, res) => {
     try {
-      const { name, subtitle, price, tag, features, inStock, primaryIndex } = req.body;
+      const { name, subtitle, price, tag, category, description, features, isFeatured, inStock, primaryIndex } = req.body;
       console.log("ADMIN POST /products body:", JSON.stringify(req.body, null, 2));
-      console.log("ADMIN POST /products inStock value:", inStock);
+      console.log("Description received:", description ? (description.length + " chars") : "MISSING");
 
       let featuresArray = [];
       if (typeof features === "string") {
@@ -256,8 +354,11 @@ router.post(
         subtitle,
         price,
         tag,
+        category: category || "Uncategorized",
         features: featuresArray,
+        description,
         imageUrls: finalImageUrls,
+        isFeatured: isFeatured === 'true' || isFeatured === true || isFeatured === 'on',
         inStock: inStock === 'true' || inStock === true || inStock === 'on' || (Array.isArray(inStock) && (inStock.includes('true') || inStock.includes('on')))
       });
 
@@ -296,7 +397,8 @@ router.put(
   },
   async (req, res) => {
     try {
-      const { name, subtitle, price, tag, features, inStock, existingImageUrls, primaryIndex } = req.body;
+      const { name, subtitle, price, tag, category, description, features, isFeatured, inStock, existingImageUrls, primaryIndex } = req.body;
+      console.log("ADMIN PUT /products description:", description ? "Present" : "Missing");
 
       let featuresArray = [];
       if (typeof features === "string") {
@@ -331,8 +433,11 @@ router.put(
 
       const updates = {
         name, subtitle, price, tag,
+        category: category || "Uncategorized",
+        description,
         features: featuresArray,
         imageUrls: finalImageUrls,
+        isFeatured: isFeatured === 'true' || isFeatured === true || isFeatured === 'on',
         inStock: inStock === 'true' || inStock === true || inStock === 'on' || (Array.isArray(inStock) && (inStock.includes('true') || inStock.includes('on')))
       };
 
@@ -448,6 +553,52 @@ router.post("/developer", async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to send dev message" });
+  }
+});
+
+// Orders Routes
+router.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).limit(50);
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: "Fetch orders failed" });
+  }
+});
+
+router.patch("/orders/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    
+    await logEvent({
+        category: "ADMIN",
+        action: "ORDER_UPDATE",
+        user: { name: req.user.name, email: req.user.email },
+        meta: { orderId: order._id, status }
+    });
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: "Update failed" });
+  }
+});
+
+router.delete("/orders/:id", async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order not found" });
+
+    await logEvent({
+        category: "ADMIN",
+        action: "ORDER_DELETE",
+        user: { name: req.user.name, email: req.user.email },
+        meta: { orderId: order._id, customer: order.customerName }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Delete failed" });
   }
 });
 
