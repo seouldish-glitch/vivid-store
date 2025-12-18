@@ -140,3 +140,4 @@ document.getElementById('appealForm').addEventListener('submit', async (e) => {
 
 
 document.addEventListener('DOMContentLoaded', loadBanInfo);
+

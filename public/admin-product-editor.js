@@ -10,14 +10,34 @@ let newFiles = [];
 let newFileUrls = [];
 
 const params = new URLSearchParams(window.location.search);
-if (params.get("id")) {
-    mode = "edit";
-    productId = params.get("id");
-    pageTitle.textContent = "Edit Product";
-    loadProduct(productId);
-} else {
-    pageTitle.textContent = "Create Product";
+const productCategory = document.getElementById("productCategory");
+
+async function loadCategories() {
+    try {
+        const res = await fetch("/api/admin/categories");
+        if (!res.ok) return;
+        const list = await res.json();
+        list.forEach(c => {
+             const opt = document.createElement("option");
+             opt.value = c.name;
+             opt.textContent = c.name;
+             productCategory.appendChild(opt);
+        });
+    } catch(e) {
+        console.error("Failed to load categories", e);
+    }
 }
+
+loadCategories().then(() => {
+    if (params.get("id")) {
+        mode = "edit";
+        productId = params.get("id");
+        pageTitle.textContent = "Edit Product";
+        loadProduct(productId);
+    } else {
+        pageTitle.textContent = "Create Product";
+    }
+});
 
 async function loadProduct(id) {
     try {
@@ -36,8 +56,11 @@ function populateForm(p) {
     form.elements.subtitle.value = p.subtitle || "";
     form.elements.price.value = p.price || 0;
     form.elements.tag.value = p.tag || "";
+    if (form.elements.category) form.elements.category.value = p.category || "Uncategorized";
+    form.elements.description.value = p.description || "";
     form.elements.features.value = (p.features || []).join("\n");
-    form.elements.inStock.checked = p.inStock !== false; 
+    form.elements.inStock.checked = p.inStock !== false;
+    form.elements.isFeatured.checked = p.isFeatured === true; 
 
     
     if (p.imageUrls && p.imageUrls.length) {
@@ -196,7 +219,12 @@ form.addEventListener("submit", async (e) => {
     const featuresArr = featuresRaw.split("\n").map(s => s.trim()).filter(Boolean);
     fd.set("features", JSON.stringify(featuresArr));
 
+    
+    const descVal = document.getElementById("productDescription").value;
+    fd.set("description", descVal);
+
     fd.set("inStock", form.elements.inStock.checked ? "true" : "false");
+    fd.set("isFeatured", form.elements.isFeatured.checked ? "true" : "false");
 
     fd.delete("images");
 
@@ -239,3 +267,50 @@ form.addEventListener("submit", async (e) => {
         btn.disabled = false;
     }
 });
+
+
+window.insertTag = function(tag) {
+    const area = document.getElementById("productDescription");
+    const start = area.selectionStart;
+    const end = area.selectionEnd;
+    const text = area.value;
+    const selected = text.substring(start, end);
+
+    let replacement;
+    if (tag === 'br') {
+        replacement = '<br>';
+    } else {
+        replacement = `<${tag}>${selected || 'text'}</${tag}>`;
+    }
+
+    area.value = text.substring(0, start) + replacement + text.substring(end);
+    area.focus();
+    
+    if (selected.length === 0 && tag !== 'br') {
+        area.setSelectionRange(start + tag.length + 2, start + tag.length + 6);
+    }
+};
+
+window.insertLink = function() {
+    const area = document.getElementById("productDescription");
+    if (!area) return;
+    
+    const start = area.selectionStart;
+    const end = area.selectionEnd;
+    const text = area.value;
+    const selected = text.substring(start, end);
+
+    const url = prompt("Enter the full URL:", "https:
+    if(!url || url === "https:
+
+    const linkText = selected || "Link Text";
+    const replacement = `<a href="${url}" target="_blank" rel="noopener">${linkText}</a>`;
+    
+    area.value = text.substring(0, start) + replacement + text.substring(end);
+    
+    
+    const newPos = start + replacement.length;
+    area.setSelectionRange(newPos, newPos);
+    area.focus();
+};
+

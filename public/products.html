@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Products | Vivid Vision</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <style>
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            gap: 40px;
+            min-height: 60vh;
+        }
+
+        .products-sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #fff;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .category-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            text-align: left;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        .category-btn.active {
+            background: rgba(245, 200, 76, 0.1);
+            color: #f5c84c;
+            border-left: 2px solid #f5c84c;
+        }
+
+        .products-content {
+            flex: 1;
+        }
+
+        .products-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .products-title h1 {
+            font-size: 32px;
+            margin: 0 0 8px 0;
+        }
+
+        .products-title p {
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .search-wrap {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        @media (max-width: 900px) {
+            .page-container {
+                flex-direction: column;
+            }
+
+            .products-sidebar {
+                width: 100%;
+                position: static;
+            }
+
+            .category-list {
+                flex-direction: row;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+
+            .category-btn {
+                white-space: nowrap;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .category-btn.active {
+                border-left: 1px solid #f5c84c;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="vv-loader" class="vv-loader">
+        <div class="vv-loader-inner">
+            <div id="vv-loader-counter" class="vv-loader-counter">0%</div>
+            <div class="vv-loader-bar">
+                <div id="vv-loader-bar-fill" class="vv-loader-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page">
+        <header class="nav">
+            <div class="nav-left">
+                <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
+                <div class="nav-title">
+                    <span class="nav-brand">VIVID VISION</span>
+                    <span class="nav-subtitle">Solar · Security · Smart Systems</span>
+                </div>
+            </div>
+
+            <nav class="nav-links nav-center">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/products" class="nav-link active">Products</a>
+                <a href="/#why-us" class="nav-link">Why us</a>
+                <a href="/#faq" class="nav-link">FAQ</a>
+                <a href="/contact" class="nav-link">Contact</a>
+            </nav>
+
+            <div class="nav-right">
+                <div id="userInfo" class="user-info">
+                    <img id="userPic" class="user-pic" src="" alt="User" />
+                    <span id="userName" class="user-name"></span>
+                    <div id="userDropdown" class="user-dropdown">
+                        <a href="/auth/logout" class="dropdown-item">Log out</a>
+                    </div>
+                </div>
+                <a href="/login" class="btn-outline" id="loginBtn">Login</a>
+
+                <button id="navToggle" class="nav-toggle" type="button" aria-label="Toggle navigation">
+                    ☰
+                </button>
+            </div>
+        </header>
+
+        <main style="padding-top: 80px;">
+            <div class="hero-bg-flow" style="opacity:0.3; pointer-events:none;">
+                <div class="flow-blob flow-1"></div>
+            </div>
+
+            <div class="page-container">
+                <aside class="products-sidebar">
+                    <div class="sidebar-title">Categories</div>
+                    <div id="categoryList" class="category-list">
+                        <button class="category-btn active" data-cat="all">All Products</button>
+                        
+                    </div>
+                </aside>
+
+                <div class="products-content">
+                    <div class="products-header">
+                        <div class="products-title">
+                            <h1>Our Products</h1>
+                            <p>Explore our premium range of solar & security solutions.</p>
+                        </div>
+                        <div class="search-wrap">
+                            <input id="productSearchPage" type="text" class="search-input"
+                                placeholder="Search products..." style="width:100%">
+                        </div>
+                    </div>
+
+                    <div id="productsGridPage" class="product-grid">
+                        
+                        <div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">
+                            Loading products...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-left">
+                <div class="footer-brand">Vivid Vision</div>
+                <div class="footer-text">
+                    Solar · Security · Smart Systems<br />
+                    © <span id="year"></span> Vivid Vision. All rights reserved.
+                </div>
+            </div>
+            <div class="footer-right">
+                <a href="/contact" class="footer-link">Contact</a>
+                <a href="https://wa.me/94XXXXXXXXX" class="footer-link" target="_blank" rel="noopener noreferrer">
+                    WhatsApp
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    
+    <div id="cartOverlay" class="cart-overlay hidden"></div>
+    <aside id="cartDrawer" class="cart-drawer">
+        <div class="cart-header">
+            <h2>Your cart</h2>
+        </div>
+        <div id="cartItems" class="cart-items"></div>
+        <div class="cart-footer">
+            <div class="cart-subtotal">
+                <span>Subtotal</span>
+                <span id="cartSubtotal">Rs. 0</span>
+            </div>
+            <button id="hideCartBtn" class="btn-outline cart-hide">Continue browsing</button>
+            <button id="checkoutBtn" class="btn-primary cart-checkout">Checkout on WhatsApp</button>
+        </div>
+    </aside>
+
+    <button id="cartBtn" class="cart-fab">
+        <span id="cartCount" class="cart-count">0</span>
+        <span>Cart</span>
+    </button>
+
+    <script src="app.js"></script>
+    <script src="products.js"></script>
+</body>
+
+</html>
+

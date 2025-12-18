@@ -20,10 +20,12 @@
   const tabsEl = document.getElementById("tabs");
   const panels = {
     users: document.getElementById("panel-users"),
+    categories: document.getElementById("panel-categories"),
     products: document.getElementById("panel-products"),
     comments: document.getElementById("panel-comments"),
     statics: document.getElementById("panel-statics"),
     banned: document.getElementById("panel-banned"),
+    orders: document.getElementById("panel-orders"),
     converter: document.getElementById("panel-converter"),
     developer: document.getElementById("panel-developer"),
   };
@@ -46,7 +48,13 @@
   document.getElementById("refreshAll").addEventListener("click", () => {
     loadUsers();
     loadProducts();
+    loadCategories();
     loadComments();
+    loadStats();
+    loadProducts();
+    loadCategories();
+    loadComments();
+    loadOrders();
     loadStats();
     loadBanned();
   });
@@ -70,7 +78,6 @@
       userNext.disabled = userPage >= totalPages;
     } catch (err) {
       console.error("loadUsers error", err);
-      // If 403, might be a session issue - try refreshing the page
       if (err.status === 403 || err.message?.includes("403") || err.message?.includes("Access denied")) {
         console.warn("[BAN] Got 403, might be session issue. User may need to refresh page.");
         if (window.htmlToast) {
@@ -93,6 +100,9 @@
         <td>${u.isAdmin ? "Admin" : "User"}</td>
         <td class="muted">${new Date(u.createdAt || Date.now()).toLocaleString()}</td>
         <td class="right nowrap">
+          <button class="vv-btn ${u.isAdmin ? 'ghost' : ''}" data-id="${u._id}" data-action="${u.isAdmin ? 'demote' : 'promote'}">
+            ${u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+          </button>
           <button class="vv-btn danger" data-id="${u._id}" data-action="ban" data-loading="false">
             <span class="btn-text">Ban</span>
             <span class="btn-spinner" style="display:none;">⏳</span>
@@ -101,9 +111,43 @@
       `;
       usersTbody.appendChild(tr);
     });
+
+    usersTbody.querySelectorAll("[data-action='promote']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Promote this user to Admin?")) return;
+        try {
+           const res = await fetch(`/api/admin/users/${btn.dataset.id}/promote`, { method: "POST", credentials: "include" });
+           if (!res.ok) {
+             const d = await res.json().catch(()=>({}));
+             throw new Error(d.error || "Failed");
+           }
+           loadUsers();
+           if (window.htmlToast) htmlToast("User promoted", { variant: "success" });
+        } catch(e) {
+           alert(e.message || "Promotion failed");
+        }
+      });
+    });
+
+    usersTbody.querySelectorAll("[data-action='demote']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Revoke admin access for this user?")) return;
+        try {
+           const res = await fetch(`/api/admin/users/${btn.dataset.id}/demote`, { method: "POST", credentials: "include" });
+           if (!res.ok) {
+             const d = await res.json().catch(()=>({}));
+             throw new Error(d.error || "Failed");
+           }
+           loadUsers();
+           if (window.htmlToast) htmlToast("User demoted", { variant: "success" });
+        } catch(e) {
+           alert(e.message || "Demotion failed");
+        }
+      });
+    });
+
     usersTbody.querySelectorAll("[data-action='ban']").forEach(b => {
       b.addEventListener("click", async function () {
-        // Prevent double-click
         if (this.dataset.loading === "true") return;
         this.dataset.loading = "true";
         const btnText = this.querySelector(".btn-text");
@@ -115,7 +159,6 @@
         try {
           await handleBan(b.dataset.id);
         } finally {
-          // Reset button state after a delay
           setTimeout(() => {
             this.dataset.loading = "false";
             if (btnText) btnText.style.display = "inline";
@@ -144,7 +187,6 @@
 
   async function handleBan(userId) {
     try {
-      // Get user info for display
       const userData = await fetchJson(`/api/admin/users?search=&page=1&limit=1000`, { credentials: "include" });
       const user = userData.items?.find(u => String(u._id) === String(userId));
       const userName = user?.name || user?.email || "User";
@@ -182,10 +224,7 @@
       `;
 
       if (window.htmlAlert) {
-        // Store form data globally
         window.__banFormData = null;
-
-        // Add script to handle ban type change
         const formWithScript = banFormHtml + `
           <script>
             (function() {
@@ -193,7 +232,7 @@
                 const form = document.getElementById('vv-ban-form');
                 if (!form) return;
                 
-                // Handle ban type change
+                
                 const banTypeSelect = form.querySelector('#banType');
                 const durationField = form.querySelector('#durationField');
                 if (banTypeSelect && durationField) {
@@ -206,7 +245,6 @@
           </script>
         `;
 
-        // Use beforeClose callback to capture form data
         const confirmed = await htmlAlert("info", "Ban User", formWithScript, {
           beforeClose: function () {
             const form = document.getElementById('vv-ban-form');
@@ -224,7 +262,6 @@
           return;
         }
 
-        // Get captured form data
         const formData = window.__banFormData;
         window.__banFormData = null;
 
@@ -241,7 +278,6 @@
           return;
         }
 
-        // Validate duration for temporary bans
         if (banType === "temporary") {
           const duration = parseInt(banDuration);
           if (!duration || duration < 1) {
@@ -257,7 +293,6 @@
         );
         if (!finalConfirm) return;
 
-        // Show loading toast (form is already closed, so we can't use statusDiv)
         let loadingToast = null;
         if (window.htmlToast) {
           loadingToast = htmlToast("⏳ Processing ban request...", { duration: 10000 });
@@ -288,7 +323,6 @@
                 console.error("[BAN] Error text:", errorText);
               } catch (e2) {
                 console.error("[BAN] Failed to read error response:", e2);
-                // Use default error message
               }
             }
             throw new Error(errorMessage);
@@ -301,27 +335,22 @@
 
           console.log("[BAN] Success response:", result);
 
-          // Remove loading toast safely
           if (loadingToast) {
             try {
               if (loadingToast.parentNode) {
                 loadingToast.parentNode.removeChild(loadingToast);
               }
             } catch (e) {
-              // Toast already removed, ignore
             }
           }
 
-          // Show success toast with details
           const banTypeDisplay = banType === "temporary" ? `Temporary ban (${banDuration}h)` : "Permanent ban";
           if (window.htmlToast) {
             htmlToast(`✅ User banned successfully - ${banTypeDisplay}`, { variant: "success", duration: 5000 });
           }
 
-          // Wait a moment before refreshing to ensure session is stable
           await new Promise(resolve => setTimeout(resolve, 500));
 
-          // Refresh data with error handling
           try {
             await loadUsers();
           } catch (err) {
@@ -340,7 +369,6 @@
             }
           }
 
-          // Show additional success message only if refresh succeeded
           if (window.htmlToast) {
             setTimeout(() => {
               htmlToast("Lists updated", { variant: "success", duration: 2000 });
@@ -350,18 +378,15 @@
         } catch (fetchErr) {
           console.error("[BAN] Fetch error:", fetchErr);
 
-          // Remove loading toast safely
           if (loadingToast) {
             try {
               if (loadingToast.parentNode) {
                 loadingToast.parentNode.removeChild(loadingToast);
               }
             } catch (e) {
-              // Toast already removed, ignore
             }
           }
 
-          // Show error toast
           if (window.htmlToast) {
             htmlToast(`❌ Error: ${fetchErr.message || "Failed to ban user"}`, { variant: "error", duration: 5000 });
           }
@@ -369,13 +394,11 @@
           throw fetchErr;
         }
       } else {
-        // Fallback to simple prompt
         const reason = prompt("Reason for ban", "Violation of terms");
         if (reason === null) return;
         const ok = confirm("Ban user? This will delete the user and their data.");
         if (!ok) return;
 
-        // Show loading
         if (window.htmlToast) htmlToast("Processing ban...", { duration: 2000 });
 
         const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/ban`, {
@@ -402,7 +425,6 @@
     }
   }
 
-  // Add event listener for ban type change
   document.addEventListener("change", (e) => {
     if (e.target && e.target.id === "banType") {
       const durationField = document.getElementById("durationField");
@@ -433,7 +455,11 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${((p.imageUrls && p.imageUrls.length) ? p.imageUrls.map(u => `<img class="thumb" src="${u}">`).join('') : (p.imageUrl ? `<img class="thumb" src="${p.imageUrl}">` : "No"))}</td>
-        <td>${escapeHtml(p.name)}${p.inStock === false ? ' <span style="color:var(--danger);font-size:12px;margin-left:6px">(Out of stock)</span>' : ''}</td>
+        <td>
+            ${escapeHtml(p.name)}
+            ${p.inStock === false ? ' <span style="color:var(--danger);font-size:12px;margin-left:6px">(Out of stock)</span>' : ''}
+            ${p.isFeatured ? ' <span style="background:var(--accent);color:#000;font-size:10px;padding:2px 4px;border-radius:4px;font-weight:bold;margin-left:6px">FEATURED</span>' : ''}
+        </td>
         <td>${Number(p.price || 0).toLocaleString()}</td>
         <td>${escapeHtml(p.tag || "")}</td>
         <td class="right nowrap">
@@ -466,6 +492,139 @@
         window.location.href = `/admin/product-editor?id=${pid}`;
       });
     });
+  }
+
+  
+  const ordersTbody = document.getElementById("ordersTbody");
+  
+  async function loadOrders() {
+      try {
+          const orders = await fetchJson("/api/admin/orders", { credentials: "include" });
+          renderOrders(orders);
+      } catch (err) {
+          console.error("loadOrders", err);
+          if (window.htmlToast) htmlToast("Failed to load orders", { variant: "error" });
+      }
+  }
+
+  function renderOrders(list) {
+      if(!ordersTbody) return;
+      ordersTbody.innerHTML = "";
+      if (list.length === 0) {
+          ordersTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">No orders found.</td></tr>`;
+          return;
+      }
+      list.forEach(o => {
+          const tr = document.createElement("tr");
+          
+          let statusColor = "#94a3b8"; 
+          if(o.status === 'confirmed') statusColor = "#22c55e";
+          if(o.status === 'completed') statusColor = "#3b82f6";
+          if(o.status === 'cancelled') statusColor = "#ef4444";
+          if(o.status === 'contacted') statusColor = "#facc15";
+
+          tr.innerHTML = `
+            <td>
+                <div style="font-weight:bold">${escapeHtml(o.customerName)}</div>
+                <div style="font-size:12px;color:var(--muted)">${escapeHtml(o.customerEmail)}</div>
+                <div style="font-size:12px;color:var(--muted)">${escapeHtml(o.customerPhone)}</div>
+            </td>
+            <td>
+                ${o.items.map(i => `<div style="font-size:13px">${escapeHtml(i.name)} (x${i.quantity})</div>`).join('')}
+            </td>
+            <td>Rs. ${Number(o.totalAmount).toLocaleString()}</td>
+            <td>${escapeHtml(o.customerProvince)}</td>
+            <td>
+                <span style="font-size:12px;padding:2px 6px;border-radius:4px;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44">
+                    ${o.status.toUpperCase()}
+                </span>
+            </td>
+            <td style="font-size:12px;color:var(--muted)">
+                ${new Date(o.createdAt).toLocaleString()}
+            </td>
+            <td class="right">
+                <select class="input status-select" data-id="${o._id}" style="padding:4px;font-size:12px">
+                    <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>Pending</option>
+                    <option value="contacted" ${o.status === 'contacted' ? 'selected' : ''}>Contacted</option>
+                    <option value="confirmed" ${o.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                    <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>Completed</option>
+                    <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+                <div style="margin-top:4px;font-size:11px"><a href="#" class="view-details-btn" data-details='${JSON.stringify(o)}'>View Full Details</a></div>
+                <div style="margin-top:6px; text-align:right;">
+                    <button class="vv-btn danger" style="padding:4px 8px; font-size:11px;" data-id="${o._id}" data-action="delete-order">Delete</button>
+                </div>
+            </td>
+          `;
+          ordersTbody.appendChild(tr);
+      });
+
+      ordersTbody.querySelectorAll(".view-details-btn").forEach(btn => {
+         btn.addEventListener("click", (e) => {
+             e.preventDefault();
+             const data = JSON.parse(btn.dataset.details);
+             const detailsHtml = `
+                <div style="margin-bottom:10px;"><strong>Name:</strong> ${escapeHtml(data.customerName)}</div>
+                <div style="margin-bottom:10px;"><strong>Email:</strong> ${escapeHtml(data.customerEmail || 'N/A')}</div>
+                <div style="margin-bottom:10px;"><strong>Phone:</strong> ${escapeHtml(data.customerPhone)}</div>
+                <div style="margin-bottom:10px;"><strong>Address:</strong> ${escapeHtml(data.customerAddress)}</div>
+                <div style="margin-bottom:10px;"><strong>Postal Code:</strong> ${escapeHtml(data.customerPostal)}</div>
+                <div style="margin-bottom:10px;"><strong>Province:</strong> ${escapeHtml(data.customerProvince)}</div>
+                <div style="margin-bottom:10px;"><strong>DOB:</strong> ${new Date(data.customerDOB).toLocaleDateString()}</div>
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:15px 0;">
+                <div style="margin-bottom:10px;"><strong>Items:</strong></div>
+                <ul style="padding-left:20px; margin:0;">
+                    ${data.items.map(i => `<li>${escapeHtml(i.name)} (x${i.quantity}) - Rs. ${(i.price * i.quantity).toLocaleString()}</li>`).join('')}
+                </ul>
+                <div style="margin-top:15px; font-size:1.1em; font-weight:bold; color:#f5c84c">Total: Rs. ${Number(data.totalAmount).toLocaleString()}</div>
+             `;
+             if(window.htmlAlert) window.htmlAlert("info", "Order Details", detailsHtml);
+             else alert(`Address: ${data.customerAddress}\nPostal: ${data.customerPostal}\nDOB: ${new Date(data.customerDOB).toLocaleDateString()}`);
+         });
+      });
+
+      ordersTbody.querySelectorAll(".status-select").forEach(sel => {
+          sel.addEventListener("change", async (e) => {
+             const newStatus = e.target.value;
+             try {
+                 const res = await fetch(`/api/admin/orders/${sel.dataset.id}/status`, {
+                     method: "PATCH",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ status: newStatus }),
+                     credentials: "include"
+                 });
+                 if(res.ok) {
+                     loadOrders(); 
+                     if (window.htmlToast) htmlToast("Order status updated", { variant: "success" });
+                 }
+             } catch(err) {
+                 alert("Failed to update status");
+             }
+          });
+      });
+
+      ordersTbody.querySelectorAll("[data-action='delete-order']").forEach(btn => {
+          btn.addEventListener("click", async () => {
+              if (window.htmlConfirm) {
+                  const confirmed = await htmlConfirm("Delete Order?", "Are you sure you want to delete this order? This action cannot be undone.");
+                  if (!confirmed) return;
+              } else {
+                  if (!confirm("Are you sure you want to delete this order?")) return;
+              }
+
+              try {
+                  const res = await fetch(`/api/admin/orders/${btn.dataset.id}`, { method: "DELETE", credentials: "include" });
+                  if (res.ok) {
+                      loadOrders();
+                      if (window.htmlToast) htmlToast("Order deleted", { variant: "success" });
+                  } else {
+                      alert("Failed to delete order");
+                  }
+              } catch (e) {
+                  alert("Error deleting order");
+              }
+          });
+      });
   }
 
   productSearch.addEventListener("keydown", async (e) => {
@@ -517,34 +676,34 @@
       </form>
     `;
     if (window.htmlAlert) {
-      // Show modal and hide default buttons (form has its own buttons)
+      
       htmlAlert("info", product ? "Edit product" : "Create product", html, { onlyOk: false });
 
-      // Hide default modal buttons and attach form handlers
+      
       setTimeout(() => {
         const actions = document.getElementById("vv-modal-actions");
-        if (actions) actions.style.display = "none"; // Hide default OK/Cancel buttons
+        if (actions) actions.style.display = "none"; 
 
         const form = document.getElementById("vv-admin-product-form");
         const cancelBtn = document.getElementById("vv-form-cancel");
 
-        // Image preview + existing-image reorder/delete + primary selection logic
+        
         try {
           if (form) {
             const fileInput = form.querySelector('input[name="images"]');
             const previewArea = form.querySelector('#imagePreviewArea');
             const primaryInput = form.querySelector('input[name="primaryIndex"]');
 
-            // State: existing image URLs (from product), newFiles (File objects), and object URLs for previews
+            
             let existingUrls = Array.isArray(product?.imageUrls) ? product.imageUrls.slice() : (product?.imageUrl ? [product.imageUrl] : []);
             let newFiles = [];
             let newFileObjectUrls = [];
             let selectedPrimary = parseInt(primaryInput?.value || '0', 10) || 0;
 
-            // Helper to clamp total images to 5
+            
             function clampToFive() {
               while ((existingUrls.length + newFiles.length) > 5) {
-                // remove last new file if exists, otherwise remove last existing
+                
                 if (newFiles.length) {
                   const f = newFiles.pop();
                   const objUrl = newFileObjectUrls.pop();
@@ -559,7 +718,7 @@
               if (!previewArea) return;
               previewArea.innerHTML = '';
 
-              // Build combined list: existingUrls then newFiles
+              
               const combined = [];
               existingUrls.forEach((u, i) => combined.push({ type: 'existing', url: u }));
               newFiles.forEach((f, i) => combined.push({ type: 'new', file: f, url: newFileObjectUrls[i] }));
@@ -578,14 +737,14 @@
                 img.src = item.url;
                 box.appendChild(img);
 
-                // Controls container
+                
                 const ctrl = document.createElement('div');
                 ctrl.style.display = 'flex';
                 ctrl.style.gap = '4px';
                 ctrl.style.justifyContent = 'center';
                 ctrl.style.marginTop = '6px';
 
-                // Move left
+                
                 const leftBtn = document.createElement('button');
                 leftBtn.type = 'button';
                 leftBtn.textContent = '◀';
@@ -595,7 +754,7 @@
                 });
                 ctrl.appendChild(leftBtn);
 
-                // Primary / set primary
+                
                 const primaryBtn = document.createElement('button');
                 primaryBtn.type = 'button';
                 primaryBtn.textContent = (idx === selectedPrimary) ? 'Primary' : 'Set';
@@ -607,7 +766,7 @@
                 });
                 ctrl.appendChild(primaryBtn);
 
-                // Move right
+                
                 const rightBtn = document.createElement('button');
                 rightBtn.type = 'button';
                 rightBtn.textContent = '▶';
@@ -617,7 +776,7 @@
                 });
                 ctrl.appendChild(rightBtn);
 
-                // Delete
+                
                 const delBtn = document.createElement('button');
                 delBtn.type = 'button';
                 delBtn.textContent = '✕';
@@ -633,8 +792,8 @@
                 previewArea.appendChild(box);
               });
 
-              // Update hidden inputs for existing images (preserve order)
-              // Remove old existingImageUrls inputs
+              
+              
               const old = form.querySelectorAll('input[name="existingImageUrls[]"]');
               old.forEach(n => n.remove());
               existingUrls.forEach(url => {
@@ -645,7 +804,7 @@
                 form.appendChild(hi);
               });
 
-              // Ensure primaryInput is set correctly (clamp)
+              
               const total = existingUrls.length + newFiles.length;
               if (selectedPrimary >= total) selectedPrimary = Math.max(0, total - 1);
               if (primaryInput) primaryInput.value = String(selectedPrimary);
@@ -654,20 +813,20 @@
             function moveItemLeft(idx) {
               if (idx <= 0) return;
               const totalExisting = existingUrls.length;
-              // if both items are in existingUrls
+              
               if (idx - 1 < totalExisting && idx < totalExisting) {
-                // swap in existingUrls
+                
                 const a = existingUrls[idx - 1];
                 existingUrls[idx - 1] = existingUrls[idx];
                 existingUrls[idx] = a;
               } else if (idx - 1 < totalExisting && idx >= totalExisting) {
-                // move a new file into existing position
+                
                 const newIdx = idx - totalExisting;
-                // Move by rebuilding the combined order (handles crossing existing/new boundary)
+                
                 rebuildCombinedOrderAfterMove(idx, idx - 1);
                 return;
               } else {
-                // both in newFiles
+                
                 const i1 = idx - totalExisting;
                 const tmpF = newFiles[i1 - 1];
                 newFiles[i1 - 1] = newFiles[i1];
@@ -676,14 +835,14 @@
                 newFileObjectUrls[i1 - 1] = newFileObjectUrls[i1];
                 newFileObjectUrls[i1] = tmpU;
               }
-              // adjust primary if needed
+              
               if (selectedPrimary === idx) selectedPrimary = idx - 1;
               else if (selectedPrimary === idx - 1) selectedPrimary = idx;
               rebuildPreviewArea();
             }
 
             function moveItemRight(idx) {
-              // symmetric
+              
               const total = existingUrls.length + newFiles.length;
               if (idx >= total - 1) return;
               const totalExisting = existingUrls.length;
@@ -692,7 +851,7 @@
                 existingUrls[idx + 1] = existingUrls[idx];
                 existingUrls[idx] = a;
               } else if (idx < totalExisting && idx + 1 >= totalExisting) {
-                // Crossing boundary between existing and new files — rebuild combined ordering
+                
                 rebuildCombinedOrderAfterMove(idx, idx + 1);
                 return;
               } else {
@@ -710,19 +869,19 @@
             }
 
             function rebuildCombinedOrderAfterMove(fromIdx, toIdx) {
-              // Build combined array, perform swap, then split back into existingUrls and newFiles
+              
               const combined = [];
               existingUrls.forEach(u => combined.push({ type: 'existing', url: u }));
               newFileObjectUrls.forEach((u, i) => combined.push({ type: 'new', url: u, file: newFiles[i] }));
-              // move element
+              
               const [item] = combined.splice(fromIdx, 1);
               combined.splice(toIdx, 0, item);
-              // split back
+              
               existingUrls = combined.filter(c => c.type === 'existing').map(c => c.url);
               const newList = combined.filter(c => c.type === 'new');
               newFiles = newList.map(n => n.file);
               newFileObjectUrls = newList.map(n => n.url);
-              // adjust primary
+              
               if (selectedPrimary === fromIdx) selectedPrimary = toIdx;
               else if (fromIdx < selectedPrimary && toIdx >= selectedPrimary) selectedPrimary--;
               else if (fromIdx > selectedPrimary && toIdx <= selectedPrimary) selectedPrimary++;
@@ -732,26 +891,26 @@
             function removeItem(idx) {
               const totalExisting = existingUrls.length;
               if (idx < totalExisting) {
-                // remove existing
+                
                 const removed = existingUrls.splice(idx, 1)[0];
-                // attempt to delete file preview not actual file until submit
+                
               } else {
                 const nfIdx = idx - totalExisting;
                 const objUrl = newFileObjectUrls.splice(nfIdx, 1)[0];
                 newFiles.splice(nfIdx, 1);
                 try { URL.revokeObjectURL(objUrl); } catch (e) { }
               }
-              // adjust primary
+              
               if (selectedPrimary === idx) selectedPrimary = 0;
               else if (selectedPrimary > idx) selectedPrimary--;
               rebuildPreviewArea();
             }
 
-            // when new files selected
+            
             if (fileInput) {
               fileInput.addEventListener('change', (ev) => {
                 const files = Array.from(fileInput.files || []);
-                // append
+                
                 files.forEach(f => {
                   newFiles.push(f);
                   newFileObjectUrls.push(URL.createObjectURL(f));
@@ -761,7 +920,7 @@
               });
             }
 
-            // initial render (existing images)
+            
             rebuildPreviewArea();
           }
         } catch (e) {
@@ -778,7 +937,7 @@
 
             try {
               await onSubmit(form);
-              // Close modal on success
+              
               const backdrop = document.getElementById("vv-modal-backdrop");
               if (backdrop) {
                 backdrop.style.display = "none";
@@ -811,7 +970,7 @@
         }
       }, 100);
     } else {
-      // fallback simple prompt if modal system not available
+      
       alert("Modal system not available.");
     }
   }
@@ -889,7 +1048,7 @@
       </script>
     `;
 
-    // We store the reply text in a global variable momentarily safely via closure or just read from DOM before close
+    
     window.__replyTextVal = null;
 
     const ok = await htmlAlert("info", "Reply to Comment", html, {
@@ -1040,7 +1199,7 @@
       });
       bannedTbody.querySelectorAll("[data-action='unban']").forEach(btn => {
         btn.addEventListener("click", async function () {
-          // Prevent double-click
+          
           if (this.dataset.loading === "true") return;
           this.dataset.loading = "true";
           const btnText = this.querySelector(".btn-text");
@@ -1052,7 +1211,7 @@
           try {
             await unbanUser(btn.dataset.id);
           } finally {
-            // Reset button state after a delay
+            
             setTimeout(() => {
               this.dataset.loading = "false";
               if (btnText) btnText.style.display = "inline";
@@ -1064,7 +1223,7 @@
       });
     } catch (err) {
       console.error("loadBanned error", err);
-      // If 403, might be a session issue
+      
       if (err.status === 403 || err.message?.includes("403") || err.message?.includes("Access denied")) {
         console.warn("[BAN] Got 403 loading banned list, might be session issue.");
         if (window.htmlToast) {
@@ -1078,7 +1237,7 @@
 
   async function unbanUser(id) {
     try {
-      // Get banned user info for display
+      
       const bannedList = await fetchJson("/api/admin/banned", { credentials: "include" });
       const bannedUser = bannedList.find(b => String(b._id) === String(id));
       const userName = bannedUser?.user?.email || bannedUser?.user?.name || "User";
@@ -1089,7 +1248,7 @@
         : confirm(confirmMessage);
       if (!ok) return;
 
-      // Show loading toast
+      
       let loadingToast = null;
       if (window.htmlToast) {
         loadingToast = htmlToast("⏳ Restoring user account...", { duration: 10000 });
@@ -1111,7 +1270,7 @@
               const errorText = await res.text();
               errorMessage = errorText || errorMessage;
             } catch (e2) {
-              // Use default error message
+              
             }
           }
           throw new Error(errorMessage);
@@ -1119,28 +1278,28 @@
 
         const result = await res.json().catch(() => ({}));
 
-        // Remove loading toast
+        
         if (loadingToast && loadingToast.parentNode) {
           loadingToast.parentNode.removeChild(loadingToast);
         }
 
-        // Show success
+        
         if (window.htmlToast) {
           htmlToast(`✅ User unbanned successfully - Account restored`, { variant: "success", duration: 5000 });
         }
 
-        // Refresh data
+        
         await loadBanned();
         await loadUsers();
 
-        // Show additional success message
+        
         if (window.htmlToast) {
           setTimeout(() => {
             htmlToast("User list updated", { variant: "success", duration: 3000 });
           }, 500);
         }
       } catch (fetchErr) {
-        // Remove loading toast
+        
         if (loadingToast && loadingToast.parentNode) {
           loadingToast.parentNode.removeChild(loadingToast);
         }
@@ -1175,14 +1334,14 @@
 
   let convertedImages = [];
 
-  // Quality slider
+  
   if (qualitySlider) {
     qualitySlider.addEventListener("input", (e) => {
       qualityValue.textContent = e.target.value + "%";
     });
   }
 
-  // Custom size toggle
+  
   document.querySelectorAll('input[name="conversionMode"]').forEach(radio => {
     radio.addEventListener("change", (e) => {
       if (customSizeInputs) {
@@ -1191,7 +1350,7 @@
     });
   });
 
-  // Drop zone interactions
+  
   if (dropZone) {
     dropZone.addEventListener("click", () => converterInput?.click());
 
@@ -1264,7 +1423,7 @@
         targetWidth = parseInt(document.getElementById("customWidth").value) || 1200;
         targetHeight = parseInt(document.getElementById("customHeight").value) || 900;
         break;
-      default: // 1200x900
+      default: 
         targetWidth = 1200;
         targetHeight = 900;
     }
@@ -1274,14 +1433,14 @@
     canvas.height = targetHeight;
     const ctx = canvas.getContext("2d");
 
-    // Calculate scaling to cover (like object-fit: cover)
+    
     const scale = Math.max(targetWidth / img.width, targetHeight / img.height);
     const scaledWidth = img.width * scale;
     const scaledHeight = img.height * scale;
     const x = (targetWidth - scaledWidth) / 2;
     const y = (targetHeight - scaledHeight) / 2;
 
-    // Draw image
+    
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, targetWidth, targetHeight);
     ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
@@ -1289,7 +1448,7 @@
     const quality = parseInt(qualitySlider.value) / 100;
     const dataUrl = canvas.toDataURL("image/jpeg", quality);
 
-    // Calculate file size
+    
     const base64Length = dataUrl.length - (dataUrl.indexOf(',') + 1);
     const sizeInBytes = (base64Length * 3) / 4;
     const sizeInKB = (sizeInBytes / 1024).toFixed(1);
@@ -1347,30 +1506,109 @@
           link.download = img.name;
           link.href = img.dataUrl;
           link.click();
-        }, i * 200); // Stagger downloads
+        }, i * 200); 
       });
+    });
+  }
+
+  
+  const categoriesTbody = document.getElementById("categoriesTbody");
+  const createCategoryBtn = document.getElementById("createCategoryBtn");
+  const newCategoryName = document.getElementById("newCategoryName");
+  const newCategoryDesc = document.getElementById("newCategoryDesc");
+
+  async function loadCategories() {
+    try {
+      const list = await fetchJson("/api/admin/categories", { credentials: "include" });
+      renderCategories(list || []);
+    } catch (err) {
+      console.error("loadCategories", err);
+      if (window.htmlToast) htmlToast("Failed to load categories", { variant: "error" });
+    }
+  }
+
+  function renderCategories(list) {
+    if (!categoriesTbody) return;
+    categoriesTbody.innerHTML = "";
+    list.forEach(c => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(c.name)}</strong></td>
+        <td class="muted">${escapeHtml(c.description || "-")}</td>
+        <td class="right nowrap">
+          <button class="vv-btn danger" data-id="${c._id}" data-action="delete-cat">Delete</button>
+        </td>
+      `;
+      categoriesTbody.appendChild(tr);
+    });
+
+    categoriesTbody.querySelectorAll("[data-action='delete-cat']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+         const id = btn.dataset.id;
+         const ok = (window.htmlConfirm) ? await htmlConfirm("Delete category?", "", { okText: "Delete", cancelText: "Cancel" }) : confirm("Delete category?");
+         if (!ok) return;
+
+         try {
+           const res = await fetch(`/api/admin/categories/${id}`, { method: "DELETE", credentials: "include" });
+           if (!res.ok) throw new Error("Delete failed");
+           if (window.htmlToast) htmlToast("Category deleted", { variant: "success" });
+           loadCategories();
+         } catch(e) {
+           if (window.htmlToast) htmlToast("Failed to delete", { variant: "error" });
+         }
+      });
+    });
+  }
+
+  if (createCategoryBtn) {
+    createCategoryBtn.addEventListener("click", async () => {
+      const name = newCategoryName.value.trim();
+      const desc = newCategoryDesc.value.trim();
+      if (!name) return;
+
+      try {
+        const res = await fetch("/api/admin/categories", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ name, description: desc }),
+           credentials: "include"
+        });
+        if (!res.ok) {
+           const d = await res.json();
+           throw new Error(d.error || "Creation failed");
+        }
+        newCategoryName.value = "";
+        newCategoryDesc.value = "";
+        if (window.htmlToast) htmlToast("Category added", { variant: "success" });
+        loadCategories();
+      } catch (err) {
+        if (window.htmlAlert) htmlAlert("error", "Error", err.message);
+      }
     });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
     showTab("users");
 
-    // Fire off loads
+    
     Promise.all([
       loadUsers(),
       loadProducts(),
+      loadCategories(),
       loadComments(),
+      loadOrders(),
       loadStats(),
       loadBanned()
     ]).then(() => {
-      // Once data is fetched (or at least requests started + small delay for effect)
+      
       setTimeout(() => {
         const loader = document.getElementById("fire-loader");
         if (loader) loader.classList.add("slide-out");
-        // Remove from DOM after transition
+        
         setTimeout(() => { if (loader) loader.remove(); }, 800);
-      }, 1000); // Wait 1s for the slide-in animation to be appreciated
+      }, 1000); 
     });
   });
 
 })();
+

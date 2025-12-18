@@ -1,6 +1,6 @@
-const WHATSAPP_PHONE = "94783024455"; // replace with your number
+const WHATSAPP_PHONE = "9477XXXXXXX"; 
 
-// DOM refs
+
 const productGrid = document.getElementById("productGrid");
 const cartBtn = document.getElementById("cartBtn");
 const cartDrawer = document.getElementById("cartDrawer");
@@ -17,10 +17,10 @@ const searchInput = document.getElementById("searchInput");
 const loadingOverlay = document.getElementById("vv-loader");
 const loadingCounter = document.getElementById("vv-loader-counter");
 
-// year in footer
+
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-// Mobile Nav Toggle
+
 const navToggle = document.getElementById("navToggle");
 const navCenter = document.querySelector(".nav-center");
 
@@ -29,7 +29,7 @@ if (navToggle && navCenter) {
     navCenter.classList.toggle("open");
   });
 
-  // Close nav when a link is clicked
+  
   const navLinks = navCenter.querySelectorAll(".nav-link");
   navLinks.forEach(link => {
     link.addEventListener("click", () => {
@@ -38,12 +38,13 @@ if (navToggle && navCenter) {
   });
 }
 
-// state
+
 const cart = [];
 let productsCache = [];
 let API_LOCKED = false;
+let currentUser = null; 
 
-// helper: format price
+
 function formatPrice(n) {
   return "Rs. " + Number(n).toLocaleString("en-LK");
 }
@@ -57,14 +58,14 @@ async function safeFetch(url, opts = {}) {
   return fetch(url, opts);
 }
 
-// simple client log
+
 function logClient(action, data) {
   console.log("[client-log]", action, data);
 }
 
-// ----------------------
-// SCROLL OBSERVER
-// ----------------------
+
+
+
 const scrollObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -74,14 +75,14 @@ const scrollObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
-// ----------------------
-// HERO TYPEWRITER
-// ----------------------
+
+
+
 function initHeroTypewriter() {
   const el = document.getElementById("heroTypewriter");
   if (!el) return;
 
-  const fullText = el.textContent.trim().replace(/\s+/g, " "); // Clean up newlines/spaces
+  const fullText = el.textContent.trim().replace(/\s+/g, " "); 
   el.textContent = "";
 
   let i = 0;
@@ -93,18 +94,18 @@ function initHeroTypewriter() {
 
     if (isDeleting) {
       el.textContent = fullText.substring(0, currentText.length - 1);
-      speed = 30; // Deleting is faster
+      speed = 30; 
     } else {
       el.textContent = fullText.substring(0, currentText.length + 1);
-      speed = 50; // Typing speed
+      speed = 50; 
     }
 
     if (!isDeleting && el.textContent === fullText) {
-      // Finished typing, pause before deleting
+      
       isDeleting = true;
       speed = 2000;
     } else if (isDeleting && el.textContent === "") {
-      // Finished deleting, pause before typing
+      
       isDeleting = false;
       speed = 500;
     }
@@ -112,43 +113,43 @@ function initHeroTypewriter() {
     setTimeout(type, speed);
   }
 
-  // Start the loop
+  
   setTimeout(type, 1000);
 }
 
-// ----------------------
-// SNOWFALL EFFECT
-// ----------------------
+
+
+
 function createSnowflakes() {
   const snowflakeCount = 50;
   for (let i = 0; i < snowflakeCount; i++) {
     const flake = document.createElement("div");
     flake.classList.add("snowflake");
 
-    // Random size between 2px and 5px
+    
     const size = Math.random() * 3 + 2 + "px";
     flake.style.width = size;
     flake.style.height = size;
 
-    // Random position
+    
     flake.style.left = Math.random() * 100 + "vw";
 
-    // Random animation duration between 5s and 10s
+    
     flake.style.animationDuration = Math.random() * 5 + 5 + "s";
 
-    // Random delay
+    
     flake.style.animationDelay = Math.random() * 5 + "s";
 
-    // Random opacity
+    
     flake.style.opacity = Math.random() * 0.5 + 0.3;
 
     document.body.appendChild(flake);
   }
 }
 
-// ---------------------------
-// PREMIUM LOADER (upgraded)
-// ---------------------------
+
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const loader = document.getElementById("vv-loader");
@@ -160,34 +161,34 @@ document.addEventListener("DOMContentLoaded", () => {
   let value = 0;
 
   const interval = setInterval(() => {
-    // random-ish increment like Lyceum
+    
     value += Math.floor(Math.random() * 7) + 1;
     if (value >= 100) value = 100;
 
     counter.textContent = value + "%";
 
-    // update bar fill
+    
     if (barFill) {
       const scale = value / 100;
       barFill.style.transform = `scaleX(${scale})`;
     }
 
-    // retrigger tick animation
+    
     counter.classList.remove("vv-tick");
-    // force reflow to restart animation
+    
     void counter.offsetWidth;
     counter.classList.add("vv-tick");
 
     if (value === 100) {
       clearInterval(interval);
 
-      // final bounce
+      
       counter.classList.remove("vv-tick");
       counter.classList.add("vv-done");
 
       setTimeout(() => {
         loader.classList.add("hidden");
-        // Trigger page entrance animations
+        
         const page = document.querySelector(".page");
         if (page) page.classList.add("loaded");
       }, 450);
@@ -195,9 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 80);
 });
 
-// ----------------------
-// AUTH UI
-// ----------------------
+
+
+
 async function initAuthUI() {
   try {
     const res = await fetch("/api/me", { credentials: "include" });
@@ -210,17 +211,18 @@ async function initAuthUI() {
     const userName = document.getElementById("userName");
 
     if (data.loggedIn) {
+      currentUser = data.user; 
       if (userInfo) {
         userInfo.style.display = "flex";
 
-        // Dropdown toggle
+        
         userInfo.onclick = (e) => {
           e.stopPropagation();
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.toggle("show");
         };
 
-        // Close dropdown when clicking outside
+        
         document.addEventListener("click", () => {
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.remove("show");
@@ -228,7 +230,7 @@ async function initAuthUI() {
       }
       if (userName) userName.textContent = data.user.name || "User";
 
-      // ✅ Use avatar proxy so Google cookies/CSP don't break the image
+      
       if (userPic) userPic.src = "/avatar?" + Date.now();
 
       loginBtn?.classList.add("hidden");
@@ -247,9 +249,9 @@ loginBtn?.addEventListener("click", (e) => {
   window.location.href = "/login";
 });
 
-// ----------------------
-// PRODUCTS
-// ----------------------
+
+
+
 async function loadProducts() {
   try {
     const res = await safeFetch("/api/products");
@@ -257,7 +259,14 @@ async function loadProducts() {
     productsCache = products;
 
     await restoreCartFromServer();
-    renderProducts(productsCache);
+
+    
+    const featuredProducts = products.filter(p => p.isFeatured === true);
+    
+    
+    
+    
+    renderProducts(featuredProducts.length > 0 ? featuredProducts : products.slice(0, 8));
 
     logClient("PRODUCTS_VIEW", { total: products.length });
   } catch (err) {
@@ -265,19 +274,19 @@ async function loadProducts() {
   }
 }
 
-// attach cursor-follow tilt to a card
+
 function attachCardTilt(card) {
-  const strength = 10; // max rotation in degrees
+  const strength = 10; 
 
   function handleMove(e) {
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left; // cursor x within card
-    const y = e.clientY - rect.top;  // cursor y within card
+    const x = e.clientX - rect.left; 
+    const y = e.clientY - rect.top;  
     const midX = rect.width / 2;
     const midY = rect.height / 2;
 
-    const rotateY = ((x - midX) / midX) * strength;   // left/right
-    const rotateX = -((y - midY) / midY) * strength;  // up/down (invert for natural tilt)
+    const rotateY = ((x - midX) / midX) * strength;   
+    const rotateX = -((y - midY) / midY) * strength;  
 
     card.classList.add("is-tilting");
     card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
@@ -297,10 +306,10 @@ function renderProducts(arr) {
   arr.forEach((p) => {
     const card = document.createElement("div");
     card.className = "product-card reveal-on-scroll";
-    scrollObserver.observe(card); // Observe for scroll animation
+    scrollObserver.observe(card); 
 
 
-    // Support both new imageUrls array and legacy imageUrl
+    
     const imageUrl = Array.isArray(p.imageUrls) && p.imageUrls[0]
       ? p.imageUrls[0]
       : p.imageUrl;
@@ -322,10 +331,10 @@ function renderProducts(arr) {
       </div>
     `;
 
-    // attach tilt
+    
     attachCardTilt(card);
 
-    // cart button
+    
     const cartBtn = card.querySelector(".add-cart-btn");
     if (cartBtn && p.inStock !== false) {
       cartBtn.addEventListener("click", () => {
@@ -337,9 +346,9 @@ function renderProducts(arr) {
   });
 }
 
-// ----------------------
-// CART
-// ----------------------
+
+
+
 function openCart() {
   cartDrawer.classList.add("open");
   cartOverlay.classList.remove("hidden");
@@ -349,7 +358,15 @@ function closeCart() {
   cartOverlay.classList.add("hidden");
 }
 
-cartBtn?.addEventListener("click", openCart);
+cartBtn?.addEventListener("click", () => {
+    if (!currentUser) {
+        if (confirm("Please log in to view your cart.")) {
+            window.location.href = "/login";
+        }
+        return;
+    }
+    openCart();
+});
 closeCartBtn?.addEventListener("click", closeCart);
 hideCartBtn?.addEventListener("click", closeCart);
 cartOverlay?.addEventListener("click", closeCart);
@@ -388,6 +405,13 @@ function updateCartUI() {
 }
 
 async function addToCart(p) {
+  if (!currentUser) {
+    if (confirm("Please log in to add items to your cart.")) {
+      window.location.href = "/login";
+    }
+    return;
+  }
+
   const existing = cart.find((i) => i.id === p._id);
   if (existing) existing.quantity += 1;
   else
@@ -452,28 +476,28 @@ async function restoreCartFromServer() {
   }
 }
 
-// ----------------------
-// CHECKOUT → WhatsApp
-// ----------------------
-checkoutBtn?.addEventListener("click", () => {
+
+
+
+checkoutBtn?.addEventListener("click", async () => {
   if (!cart.length) return;
-
-  const lines = [
-    "Hello, I would like to order:",
-    "",
-    ...cart.map((item, idx) => `${idx + 1}. ${item.name}`),
-  ];
-
-  const message = encodeURIComponent(lines.join("\n"));
-  window.location.href = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
+  try {
+      const res = await fetch("/api/checkout-session", { credentials: "include" });
+      const data = await res.json();
+      if (data.token) {
+          window.location.href = `/checkout?q=${data.token}`;
+      }
+  } catch (err) {
+      console.error("Checkout session failed", err);
+  }
 });
 
-// ----------------------
-// SEARCH
-// ----------------------
+
+
+
 searchInput?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
-    e.preventDefault(); // Prevent form submission if inside a form
+    e.preventDefault(); 
     const q = searchInput.value.toLowerCase().trim();
     if (!q) return renderProducts(productsCache);
 
@@ -489,16 +513,16 @@ searchInput?.addEventListener("keydown", (e) => {
   }
 });
 
-// ----------------------
-// INIT
-// ----------------------
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
   initAuthUI();
   loadProducts();
   initHeroTypewriter();
   createSnowflakes();
 
-  // Observe static scroll elements
+  
   document.querySelectorAll(".reveal-on-scroll").forEach(el => scrollObserver.observe(el));
 });
 

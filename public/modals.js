@@ -12,7 +12,7 @@ const css = `
   position:fixed; top:0; left:0; right:0; bottom:0; 
   display:none; align-items:center; justify-content:center; 
   background:rgba(0,0,0,0.85); z-index:9999; backdrop-filter: blur(5px);
-  padding: 10px; /* Safety padding */
+  padding: 10px; 
 }
 
 #vv-modal { 
@@ -64,7 +64,7 @@ const css = `
   align-items: center;
   justify-content: center;
   padding: 8px 16px; 
-  border-radius: 8px; /* Slightly tighter radius */
+  border-radius: 8px; 
   border: 0; 
   cursor: pointer; 
   font-weight: 600; 
@@ -118,11 +118,11 @@ const css = `
 .vv-toast.success { border-left: 3px solid #10b981; }
 .vv-toast.error { border-left: 3px solid #ef4444; }
 
-/* Mobile Optimizations */
+
 @media (max-width: 600px) {
   #vv-modal {
-    margin: 16px; /* Ensure physical margin from screen edges */
-    width: auto; /* Let margin control width */
+    margin: 16px; 
+    width: auto; 
   }
   
   #vv-modal .vv-actions {
@@ -130,7 +130,7 @@ const css = `
   }
   
   .vv-btn {
-    flex: 1; /* Full width buttons on tiny screens */
+    flex: 1; 
     padding: 10px;
   }
 

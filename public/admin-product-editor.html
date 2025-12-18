@@ -43,6 +43,36 @@
             line-height: 1.5;
         }
 
+        .rich-toolbar {
+            display: flex;
+            gap: 5px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .rich-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .rich-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .rich-textarea {
+            border-radius: 0 0 8px 8px !important;
+        }
+
         .preview-area {
             display: flex;
             gap: 10px;
@@ -118,6 +148,29 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" id="productCategory" class="input" style="width:100%">
+                        <option value="Uncategorized">Uncategorized</option>
+                        
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Product Description (Rich Text/HTML)</label>
+                    <div class="rich-toolbar">
+                        <button type="button" class="rich-btn" onclick="insertTag('b')"><b>B</b></button>
+                        <button type="button" class="rich-btn" onclick="insertTag('i')"><i>I</i></button>
+                        <button type="button" class="rich-btn" onclick="insertTag('u')"><u>U</u></button>
+                        <button type="button" class="rich-btn" onclick="insertLink()">Link</button>
+                        <button type="button" class="rich-btn" onclick="insertTag('br')">New Line</button>
+                    </div>
+                    <textarea name="description" id="productDescription" class="input rich-textarea" style="width:100%"></textarea>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                        💡 <b>Pro Tip:</b> These tools insert HTML tags. Use "Link" to add clickable buttons. They will look normal on the live site!
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>Features (One per line)</label>
                     <textarea name="features" class="input" style="width:100%"></textarea>
                 </div>
@@ -133,10 +186,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer;">
-                        <input type="checkbox" name="inStock" value="true" checked>
-                        <span style="color:var(--text-main); font-size:14px;">In Stock</span>
-                    </label>
+                    <div style="display:flex; gap:20px;">
+                        <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer;">
+                            <input type="checkbox" name="inStock" value="true" checked>
+                            <span style="color:var(--text-main); font-size:14px;">In Stock</span>
+                        </label>
+                        <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer;">
+                            <input type="checkbox" name="isFeatured" value="true">
+                            <span style="color:var(--text-main); font-size:14px;">Featured Product</span>
+                        </label>
+                    </div>
                 </div>
 
                 <input type="hidden" name="primaryIndex" value="0">
