@@ -1,6 +1,12 @@
 
-
-require("dotenv").config();
+// Load .env only in development (Vercel injects env vars directly)
+if (process.env.NODE_ENV !== "production") {
+  try {
+    require("dotenv").config();
+  } catch (err) {
+    console.warn("dotenv not available:", err.message);
+  }
+}
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
@@ -741,11 +747,7 @@ app.get("/admin.html", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use("/uploads", express.static(uploadsDir));
-app.use(express.static(path.join(__dirname, "public")));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
