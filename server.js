@@ -23,12 +23,20 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .filter(Boolean);
 
 const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+  }
+} catch (err) {
+  console.warn("Could not create uploads directory (expected on some read-only systems):", err.message);
+}
+
+if (!process.env.MONGO_URI) {
+  console.error("❌ CRITICAL: MONGO_URI is not defined in environment variables!");
 }
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI || "")
   .then(() => {
     console.log("✅ MongoDB connected");
     // Run cleanup once on startup when connection is ready
@@ -128,7 +136,9 @@ app.use(
     secret: process.env.SESSION_SECRET || "change-me",
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+    store: (process.env.MONGO_URI) 
+      ? MongoStore.create({ mongoUrl: process.env.MONGO_URI })
+      : undefined,
   })
 );
 
@@ -1325,6 +1335,10 @@ if (BannedUserModel) {
 }
 
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
