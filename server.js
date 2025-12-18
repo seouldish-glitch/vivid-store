@@ -150,79 +150,111 @@ try {
   console.warn("Order model failed to load", e);
 }
 
-app.use(
-  session({
+// Session configuration with safe MongoStore initialization
+try {
+  const sessionConfig = {
     secret: process.env.SESSION_SECRET || "change-me",
     resave: false,
     saveUninitialized: false,
-    store: (process.env.MONGO_URI) 
-      ? MongoStore.create({ mongoUrl: process.env.MONGO_URI })
-      : undefined,
-  })
-);
+  };
+  
+  // Only add MongoStore if MONGO_URI is available
+  if (process.env.MONGO_URI) {
+    try {
+      sessionConfig.store = MongoStore.create({ 
+        mongoUrl: process.env.MONGO_URI,
+        touchAfter: 24 * 3600 // lazy session update
+      });
+    } catch (storeErr) {
+      console.warn("MongoStore creation failed, using memory store:", storeErr.message);
+    }
+  }
+  
+  app.use(session(sessionConfig));
+} catch (sessionErr) {
+  console.error("Session middleware failed:", sessionErr);
+  // Use basic session without store as fallback
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "change-me",
+    resave: false,
+    saveUninitialized: false,
+  }));
+}
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CALLBACK_SECRET || process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails && profile.emails[0].value;
-        const photo = profile.photos && profile.photos[0]?.value;
-        const adminEmailsLower = ADMIN_EMAILS.map(e => e.toLowerCase());
-        const isEnvAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
+// Passport configuration with error handling
+try {
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CALLBACK_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: process.env.GOOGLE_CALLBACK_URL,
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            const email = profile.emails && profile.emails[0].value;
+            const photo = profile.photos && profile.photos[0]?.value;
+            const adminEmailsLower = ADMIN_EMAILS.map(e => e.toLowerCase());
+            const isEnvAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
 
-        let user = await User.findOne({ googleId: profile.id });
+            let user = await User.findOne({ googleId: profile.id });
 
-        if (!user) {
-          user = await User.create({
-            googleId: profile.id,
-            name: profile.displayName,
-            email,
-            picture: photo || "",
-            isAdmin: isEnvAdmin,
-          });
-        } else {
-          user.name = profile.displayName || user.name;
-          user.email = email || user.email;
-          if (photo) user.picture = photo;
-          
-          // Only force true if they are in the ENV list. 
-          // Otherwise, respect the existing DB value (allows manual promotion).
-          if (isEnvAdmin) {
-            user.isAdmin = true;
+            if (!user) {
+              user = await User.create({
+                googleId: profile.id,
+                name: profile.displayName,
+                email,
+                picture: photo || "",
+                isAdmin: isEnvAdmin,
+              });
+            } else {
+              user.name = profile.displayName || user.name;
+              user.email = email || user.email;
+              if (photo) user.picture = photo;
+              
+              // Only force true if they are in the ENV list. 
+              // Otherwise, respect the existing DB value (allows manual promotion).
+              if (isEnvAdmin) {
+                user.isAdmin = true;
+              }
+              
+              await user.save();
+            }
+
+            done(null, user);
+          } catch (err) {
+            done(err, null);
           }
-          
-          await user.save();
         }
+      )
+    );
 
+    passport.serializeUser((user, done) => done(null, user.id));
+
+    passport.deserializeUser(async (id, done) => {
+      try {
+        const user = await User.findById(id);
         done(null, user);
       } catch (err) {
         done(err, null);
       }
-    }
-  )
-);
+    });
 
-passport.serializeUser((user, done) => done(null, user.id));
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err, null);
+    app.use(passport.initialize());
+    app.use(passport.session());
+  } else {
+    console.warn("Google OAuth credentials not found, authentication disabled");
   }
-});
-
-app.use(passport.initialize());
-app.use(passport.session());
+} catch (passportErr) {
+  console.error("Passport initialization failed:", passportErr);
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
   if (req.user && req.user.email) {
