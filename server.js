@@ -67,6 +67,9 @@ const ProductSchema = new mongoose.Schema({
   price: Number,
   tag: String,
   imageUrls: [String],
+  category: { type: String, default: "Uncategorized" },
+  description: String,
+  isFeatured: { type: Boolean, default: false },
   features: [String],
   inStock: { type: Boolean, default: true },
 });
@@ -106,6 +109,20 @@ try {
   BannedUserModel = null;
 }
 
+// Load Category model
+try {
+  require("./models/Category");
+} catch (e) {
+  console.warn("Category model failed to load", e);
+}
+
+// Load Order model
+try {
+  require("./models/Order");
+} catch (e) {
+  console.warn("Order model failed to load", e);
+}
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "change-me",
@@ -127,7 +144,7 @@ passport.use(
         const email = profile.emails && profile.emails[0].value;
         const photo = profile.photos && profile.photos[0]?.value;
         const adminEmailsLower = ADMIN_EMAILS.map(e => e.toLowerCase());
-        const isAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
+        const isEnvAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
 
         let user = await User.findOne({ googleId: profile.id });
 
@@ -137,13 +154,19 @@ passport.use(
             name: profile.displayName,
             email,
             picture: photo || "",
-            isAdmin,
+            isAdmin: isEnvAdmin,
           });
         } else {
           user.name = profile.displayName || user.name;
           user.email = email || user.email;
           if (photo) user.picture = photo;
-          user.isAdmin = isAdmin;
+          
+          // Only force true if they are in the ENV list. 
+          // Otherwise, respect the existing DB value (allows manual promotion).
+          if (isEnvAdmin) {
+            user.isAdmin = true;
+          }
+          
           await user.save();
         }
 
@@ -626,6 +649,20 @@ app.get(["/product"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "product.html"));
 });
 
+app.get(["/products"], (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "products.html"));
+});
+
+app.get(["/checkout"], (req, res) => {
+  const token = req.query.q;
+  if (!token || !req.session.checkoutToken || token !== req.session.checkoutToken) {
+    // Show 404 if token is invalid or missing
+    const path = require("path");
+    return res.status(404).sendFile(path.join(__dirname, "public", "404.html"));
+  }
+  return res.sendFile(path.join(__dirname, "public", "checkout.html"));
+});
+
 try {
   const adminRoutes = require("./routes/adminRoutes");
   app.use("/api/admin", adminRoutes);
@@ -757,6 +794,17 @@ app.get("/avatar/user/:userId", async (req, res) => {
 app.get("/api/products", async (req, res) => {
   const products = await Product.find();
   res.json(products);
+});
+
+app.get("/api/categories", async (req, res) => {
+  try {
+    // If you need Category model, ensure it's loaded (it was loaded earlier in conditional block)
+    const Category = mongoose.model("Category");
+    const categories = await Category.find().sort({ name: 1 });
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: "Fetch categories failed" });
+  }
 });
 
 app.get("/api/test", (req, res) => {
@@ -1110,6 +1158,120 @@ app.post("/api/contact", async (req, res) => {
   } catch (err) {
     console.error("Contact webhook failed", err);
     res.status(500).json({ error: "Webhook failed" });
+  }
+});
+
+// Generate checkout session token
+app.get("/api/checkout-session", requireUser, (req, res) => {
+  const crypto = require("crypto");
+  const token = crypto.randomBytes(16).toString("hex");
+  req.session.checkoutToken = token;
+  res.json({ token });
+});
+
+// Rate Limiter for Orders
+const orderCooldowns = new Map();
+
+app.post("/api/orders", requireUser, async (req, res) => {
+  try {
+    const { 
+      fullName, phone, dob, address, postalCode, province, checkoutToken, recaptchaResponse 
+    } = req.body;
+
+    // Verify token
+    if (!checkoutToken || !req.session.checkoutToken || checkoutToken !== req.session.checkoutToken) {
+        return res.status(403).json({ error: "Invalid or expired checkout session." });
+    }
+
+    // 1. CAPTCHA Validation
+    if (!recaptchaResponse) {
+        return res.status(400).json({ error: "CAPTCHA verification failed. Please try again." });
+    }
+
+    try {
+        const axios = require("axios");
+        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LeIxAcTAAAAAGG-v3_m9oG774W4_H0O4block"; // Placeholder
+        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaResponse}`;
+        
+        const response = await axios.post(verifyUrl);
+        if (!response.data.success) {
+            console.error("reCAPTCHA Verification Failed:", response.data["error-codes"]);
+            return res.status(400).json({ error: "CAPTCHA verification failed. Please try again." });
+        }
+    } catch (error) {
+        console.error("reCAPTCHA Error:", error);
+        return res.status(500).json({ error: "Failed to verify CAPTCHA. Please try again later." });
+    }
+    // 2. Cooldown (1 order per 2 minutes per user)
+    const userId = req.user._id.toString();
+    const now = Date.now();
+    if (orderCooldowns.has(userId)) {
+      const lastTime = orderCooldowns.get(userId);
+      if (now - lastTime < 120000) { // 2 mins
+        return res.status(429).json({ error: "Please wait a few minutes before placing another order." });
+      }
+    }
+
+    // 3. Get Cart
+    const cart = req.user.cart;
+    if (!cart || cart.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // 4. Calculate Total & Create Items
+    let total = 0;
+    const items = [];
+    
+    // Populate product details
+    await req.user.populate("cart.product");
+    
+    for (const item of req.user.cart) {
+      if (!item.product) continue;
+      items.push({
+        product: item.product._id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity
+      });
+      total += item.product.price * item.quantity;
+    }
+
+    // 5. Create Order
+    const Order = mongoose.model("Order");
+    const newOrder = await Order.create({
+      user: userId,
+      customerName: fullName,
+      customerEmail: req.user.email,
+      customerPhone: phone,
+      customerDOB: dob,
+      customerAddress: address,
+      customerPostal: postalCode,
+      customerProvince: province,
+      items,
+      totalAmount: total,
+      status: "pending"
+    });
+
+    // 6. Clear Cart & Token
+    req.user.cart = [];
+    await req.user.save();
+    delete req.session.checkoutToken;
+    
+    // 7. Set Cooldown
+    orderCooldowns.set(userId, now);
+
+    // 8. Log
+    await logEvent("ORDER_create", {
+      user: req.user.email,
+      orderId: newOrder._id,
+      amount: total
+    });
+
+    res.json({ success: true, orderId: newOrder._id });
+
+  } catch (err) {
+    console.error("Order creation failed", err);
+    res.status(500).json({ error: "Failed to place order." });
   }
 });
 
