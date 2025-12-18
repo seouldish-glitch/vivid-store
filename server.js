@@ -35,23 +35,42 @@ if (!process.env.MONGO_URI) {
   console.error("❌ CRITICAL: MONGO_URI is not defined in environment variables!");
 }
 
-mongoose
-  .connect(process.env.MONGO_URI || "")
-  .then(() => {
+// Use mongoose.connect with better error handling for serverless
+const connectDB = async () => {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI not defined");
+    }
+    
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000,
+    });
+    
     console.log("✅ MongoDB connected");
+    
     // Run cleanup once on startup when connection is ready
     if (mongoose.models.BannedUser) {
-      mongoose.models.BannedUser.deleteMany({
-        banType: "temporary",
-        expiresAt: { $lte: new Date() }
-      }).then(result => {
+      try {
+        const result = await mongoose.models.BannedUser.deleteMany({
+          banType: "temporary",
+          expiresAt: { $lte: new Date() }
+        });
         if (result.deletedCount > 0) {
           console.log(`🧹 Cleaned up ${result.deletedCount} expired temporary ban(s) on startup`);
         }
-      }).catch(err => console.error("Failed to cleanup expired bans on startup:", err));
+      } catch (err) {
+        console.error("Failed to cleanup expired bans on startup:", err);
+      }
     }
-  })
-  .catch((err) => console.error("Mongo error", err));
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    // Don't crash the app, just log the error
+  }
+};
+
+// Connect to DB (non-blocking)
+connectDB();
 
 const UserSchema = new mongoose.Schema({
   googleId: String,
@@ -738,6 +757,17 @@ async function logEvent(title, payload) {
   }
 }
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    mongoConnected: mongoose.connection.readyState === 1,
+    env: process.env.NODE_ENV || "development"
+  });
+});
+
+// User info endpoint
 app.get("/api/me", (req, res) => {
   if (!req.user) return res.json({ loggedIn: false });
 
