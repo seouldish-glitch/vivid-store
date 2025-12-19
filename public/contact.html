@@ -41,7 +41,6 @@
       animation: blurInPage 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.1s;
     }
-
     @keyframes blurInPage {
       0% {
         opacity: 0;
@@ -55,7 +54,6 @@
         transform: scale(1);
       }
     }
-
     @keyframes slideInUp {
       0% {
         opacity: 0;
@@ -82,7 +80,6 @@
         filter: blur(0);
       }
     }
-
     @keyframes slideInRight {
       0% {
         opacity: 0;
@@ -119,7 +116,6 @@
     .product-page-body {
       background: var(--bg);
     }
-
 
     .nav {
       position: sticky;
@@ -243,15 +239,11 @@
         display: none;
       }
     }
-
-
     .section {
       max-width: 1200px;
       margin: 0 auto;
       padding: 22px 24px;
     }
-
-
     .contact-heading {
       text-align: center;
       margin-bottom: 10px;
@@ -289,12 +281,10 @@
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
       opacity: 0;
     }
-
     .contact-form-card {
       animation: slideInLeft 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.6s;
     }
-
     .contact-info-card {
       animation: slideInRight 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       animation-delay: 0.7s;
@@ -310,8 +300,6 @@
       color: var(--muted);
       margin: 0 0 16px;
     }
-
-
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), var(--accent-strong));
       color: #020617;
@@ -338,8 +326,6 @@
     .submit-btn {
       margin-top: 4px;
     }
-
-
     .contact-form .form-field {
       margin-bottom: 12px;
     }
@@ -371,7 +357,6 @@
       box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4);
       transform: translateY(-1px);
     }
-
     input::-webkit-contacts-auto-fill-button,
     input::-webkit-credentials-auto-fill-button {
       visibility: hidden !important;
@@ -380,8 +365,6 @@
       width: 0 !important;
       height: 0 !important;
     }
-
-
     .info-section {
       margin-bottom: 18px;
     }
@@ -410,7 +393,6 @@
       text-decoration: underline;
       color: var(--accent-strong);
     }
-
     .whatsapp-btn {
       margin-top: 4px;
       text-align: center;
@@ -430,7 +412,6 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
     }
-
     .contact-map {
       max-width: 1200px;
       padding-top: 10px;
@@ -470,7 +451,6 @@
     .contact-map-card:hover iframe {
       transform: scale(1.01);
     }
-
     .contact-status {
       margin-top: 8px;
       font-size: 12px;
@@ -485,8 +465,6 @@
     .contact-status.error {
       color: #f97373;
     }
-
-
     .footer {
       border-top: 1px solid var(--border);
       padding: 12px 24px 16px;
@@ -528,11 +506,61 @@
         transition-duration: 0.01ms !important;
       }
     }
+    .announcement-bar {
+      background: #facc15;
+      color: #000;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      text-align: center;
+      position: relative;
+      z-index: 1001;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      animation: slideDownAnn 0.5s ease;
+    }
+
+    .announcement-bar.hidden { display: none; }
+    .announcement-bar.warning { background: #f59e0b; color: #fff; }
+    .announcement-bar.danger { background: #ef4444; color: #fff; }
+    .announcement-bar.success { background: #22c55e; color: #fff; }
+    .announcement-bar.info { background: #3b82f6; color: #fff; }
+
+    .ann-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .close-ann {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .close-ann:hover { opacity: 1; }
+
+    @keyframes slideDownAnn {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
   </style>
-  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body class="product-page-body">
+  <div id="announcement-bar" class="announcement-bar hidden">
+    <div class="ann-container">
+      <span id="ann-content"></span>
+      <button id="close-ann" class="close-ann">&times;</button>
+    </div>
+  </div>
   <header class="nav">
     <div class="nav-left">
       <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
@@ -543,15 +571,13 @@
     </div>
     <nav class="nav-links nav-center">
       <a href="/" class="nav-link">Home</a>
-      <a href="/products" class="nav-link">Products</a>
+      <a href="/#products" class="nav-link">Products</a>
       <a href="/#why-us" class="nav-link">Why us</a>
       <a href="/#faq" class="nav-link">FAQ</a>
       <a href="/contact" class="nav-link active">Contact</a>
     </nav>
     <div class="nav-right">
-    <div class="nav-right">
-      <a href="/products" class="btn-outline">Shop now</a>
-    </div>
+      <a href="/#products" class="btn-outline">Shop now</a>
     </div>
   </header>
 
@@ -559,7 +585,6 @@
     <h1>Contact us</h1>
     <p>Feel free to contact us using the form below.</p>
   </section>
-
   <main class="section contact-wrapper">
     <div class="contact-grid">
       <div class="contact-card contact-form-card">
@@ -603,7 +628,6 @@
           <p id="contactStatus" class="contact-status"></p>
         </form>
       </div>
-
       <div class="contact-card contact-info-card">
         <h2 class="contact-title">Our contact information</h2>
         <p class="contact-desc">
@@ -644,15 +668,13 @@
       </div>
     </div>
   </main>
-
   <section class="section contact-map">
     <div class="contact-map-card">
       <h2>Find us on the map</h2>
-      <iframe src="https://www.google.com/maps?q=No%20554A%201/1%202nd%20Kurana%20Negombo&output=embed" loading="lazy"
+      <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d467.0310075058016!2d79.85689804029255!3d7.193220856038197!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae2efeba1c50753%3A0xfbed9c6f699040f7!2sVivid%20Vision%20Energy%20(PVT)%20Ltd!5e0!3m2!1sen!2slk!4v1734367702148!5m2!1sen!2slk" loading="lazy"
         referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
   </section>
-
   <footer class="footer">
     <div>© <span id="year"></span> Vivid Vision. All rights reserved.</div>
     <div class="footer-right">The Vision of the Energy</div>
@@ -660,6 +682,30 @@
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+    async function initAnnouncements() {
+      const bar = document.getElementById("announcement-bar");
+      const content = document.getElementById("ann-content");
+      const closeBtn = document.getElementById("close-ann");
+      if (!bar || !content) return;
+
+      try {
+        const res = await fetch("/api/announcements/active");
+        const active = await res.json();
+        if (active && active.length > 0) {
+          const ann = active[0];
+          content.innerHTML = `<span class="ann-title">${ann.title}</span> ${ann.message}`;
+          bar.className = `announcement-bar ${ann.type}`;
+          bar.classList.remove("hidden");
+          closeBtn.onclick = () => {
+            bar.classList.add("hidden");
+            sessionStorage.setItem("ann-closed-" + ann._id, "true");
+          };
+          if (sessionStorage.getItem("ann-closed-" + ann._id)) {
+            bar.classList.add("hidden");
+          }
+        }
+      } catch (err) {}
+    }
 
     class TypewriterPlaceholder {
       constructor(element, texts, options = {}) {
@@ -675,7 +721,6 @@
         this.isDeleting = false;
         this.isTyping = false;
 
-     
         this.originalPlaceholder = element.getAttribute('placeholder') || '';
 
         this.element.addEventListener('focus', () => {
@@ -735,7 +780,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-    
+      initAnnouncements();
       const nameInput = document.querySelector('input[name="name"]');
       if (nameInput) {
         new TypewriterPlaceholder(nameInput, [

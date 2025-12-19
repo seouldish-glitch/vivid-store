@@ -1,6 +1,8 @@
+/* =======================================================
+   Vivid Vision – Product page premium comments & Neon Glow
+   ======================================================= */
 
-
-
+/* BACKGROUND BLOB ANIMATION (The "Fire" Glow) */
 .glow-blob {
   position: fixed;
   width: 600px;
@@ -27,24 +29,24 @@
   }
 }
 
-
+/* Glassy Card Override for Detail Container */
 .detail-container {
   border-radius: 24px;
   background: rgba(15, 23, 42, 0.6);
- 
+  /* Transparent dark base */
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.7),
     inset 0 0 20px rgba(245, 200, 76, 0.03);
- 
+  /* Subtle internal gold glow */
   padding: 24px;
   margin-bottom: 32px;
   position: relative;
   overflow: hidden;
 }
 
-
+/* Subtle accent line on top of the card */
 .detail-container::before {
   content: "";
   position: absolute;
@@ -55,7 +57,7 @@
   background: linear-gradient(90deg, transparent, rgba(245, 200, 76, 0.5), transparent);
 }
 
-
+/* Glassy Comment Section */
 .comments-section {
   border-radius: 24px;
   background: rgba(15, 23, 42, 0.6);
@@ -66,7 +68,7 @@
 }
 
 
-
+/* Comment Form Container - Glassy & Premium */
 .comment-form-card {
   position: relative;
   background: linear-gradient(145deg, rgba(22, 27, 46, 0.7), rgba(9, 12, 18, 0.8));
@@ -74,7 +76,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 6px;
- 
+  /* Inner padding for the "frame" feel */
   box-shadow:
     0 20px 40px -10px rgba(0, 0, 0, 0.5),
     inset 0 1px 1px rgba(255, 255, 255, 0.1);
@@ -88,10 +90,10 @@
     0 25px 50px -12px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.15),
     0 0 0 1px rgba(245, 200, 76, 0.3);
- 
+  /* Subtle gold ring */
 }
 
-
+/* Textarea styling */
 .comment-input {
   width: 100%;
   min-height: 100px;
@@ -115,7 +117,7 @@
   opacity: 0.4;
 }
 
-
+/* Bottom Action Bar (Submit button + Status) */
 .comment-form-footer {
   display: flex;
   align-items: center;
@@ -131,7 +133,7 @@
   opacity: 0.9;
 }
 
-
+/* Submit Button - Neumorphic/Glassy Gold */
 #commentSubmit {
   background: linear-gradient(135deg, #f5c84c 0%, #d97706 100%);
   color: #111827;
@@ -169,13 +171,13 @@
 }
 
 
-
+/* Gold name for admins */
 .comment-name-admin {
   color: var(--accent-strong);
   font-weight: 600;
 }
 
-
+/* Small pill badge for admins (and admin replies) */
 .comment-badge {
   display: inline-flex;
   align-items: center;
@@ -191,14 +193,14 @@
   color: var(--accent-strong);
 }
 
-
+/* Indent replies slightly + left border */
 .comment-item-reply {
   margin-left: 24px;
   padding-left: 8px;
   border-left: 2px solid var(--accent-soft);
 }
 
-
+/* "Replying to X" label under meta row */
 .comment-reply-label {
   font-size: 11px;
   color: var(--muted);
@@ -206,7 +208,7 @@
   margin-bottom: 2px;
 }
 
-
+/* Icon buttons – reply + delete */
 .comment-delete,
 .comment-reply {
   margin-left: 4px;
@@ -226,7 +228,7 @@
     transform 0.1s ease;
 }
 
-
+/* Hover states (desktop) */
 .comment-delete:hover,
 .comment-reply:hover {
   background: rgba(15, 23, 42, 0.9);
@@ -241,7 +243,9 @@
   color: var(--accent-strong);
 }
 
-
+/* =======================================================
+   Mobile tweaks – make it comfy on phones
+   ======================================================= */
 
 @media (max-width: 768px) {
   .comments-section {

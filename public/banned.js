@@ -1,5 +1,3 @@
-
-
 async function loadBanInfo() {
     try {
         const res = await fetch('/api/ban-info', {
@@ -14,12 +12,10 @@ async function loadBanInfo() {
         const data = await res.json();
 
         if (!data.isBanned) {
-            
             window.location.href = '/';
             return;
         }
 
-        
         const banTypeEl = document.getElementById('banType');
         const banReasonEl = document.getElementById('banReason');
         const banDateEl = document.getElementById('banDate');
@@ -28,7 +24,6 @@ async function loadBanInfo() {
         const countdownContainer = document.getElementById('countdownContainer');
         const appealEmailEl = document.getElementById('appealEmail');
 
-        
         if (data.banType === 'temporary') {
             banTypeEl.textContent = 'Temporary Ban';
             banTypeEl.style.color = '#f59e0b';
@@ -37,25 +32,20 @@ async function loadBanInfo() {
             banTypeEl.style.color = '#ef4444';
         }
 
-        
         banReasonEl.textContent = data.reason || 'Violation of terms';
 
-        
         if (data.bannedAt) {
             banDateEl.textContent = new Date(data.bannedAt).toLocaleString();
         }
 
-        
         if (data.email) {
             appealEmailEl.value = data.email;
         }
 
-        
         if (data.banType === 'temporary' && data.expiresAt) {
             expiryRow.style.display = 'flex';
             banExpiryEl.textContent = new Date(data.expiresAt).toLocaleString();
 
-            
             countdownContainer.style.display = 'block';
             startCountdown(data.expiresAt);
         }
@@ -89,7 +79,6 @@ function startCountdown(expiresAt) {
     updateCountdown();
     setInterval(updateCountdown, 1000);
 }
-
 
 document.getElementById('appealForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -127,7 +116,6 @@ document.getElementById('appealForm').addEventListener('submit', async (e) => {
         statusEl.className = 'appeal-status success';
         messageEl.value = '';
 
-        
         messageEl.disabled = true;
         e.target.querySelector('button[type="submit"]').disabled = true;
 
@@ -138,6 +126,4 @@ document.getElementById('appealForm').addEventListener('submit', async (e) => {
     }
 });
 
-
 document.addEventListener('DOMContentLoaded', loadBanInfo);
-

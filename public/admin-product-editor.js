@@ -2,6 +2,7 @@ const form = document.getElementById("productForm");
 const pageTitle = document.getElementById("pageTitle");
 const imageInput = document.getElementById("imageInput");
 const imagePreview = document.getElementById("imagePreview");
+const categorySelect = document.getElementById("categorySelect");
 
 let mode = "create";
 let productId = null;
@@ -10,40 +11,42 @@ let newFiles = [];
 let newFileUrls = [];
 
 const params = new URLSearchParams(window.location.search);
-const productCategory = document.getElementById("productCategory");
+if (params.get("id")) {
+    mode = "edit";
+    productId = params.get("id");
+    pageTitle.textContent = "Edit Product";
+    loadProduct(productId);
+} else {
+    pageTitle.textContent = "Create Product";
+    loadCategories();
+}
 
-async function loadCategories() {
+async function loadCategories(selectedId = null) {
     try {
         const res = await fetch("/api/admin/categories");
         if (!res.ok) return;
-        const list = await res.json();
-        list.forEach(c => {
-             const opt = document.createElement("option");
-             opt.value = c.name;
-             opt.textContent = c.name;
-             productCategory.appendChild(opt);
+        const categories = await res.json();
+        
+        categorySelect.innerHTML = '<option value="">-- No Category --</option>';
+        
+        categories.forEach(c => {
+            const opt = document.createElement("option");
+            opt.value = c._id;
+            opt.textContent = c.name;
+            if (selectedId && c._id === selectedId) opt.selected = true;
+            categorySelect.appendChild(opt);
         });
-    } catch(e) {
-        console.error("Failed to load categories", e);
+    } catch (err) {
+        console.error("Failed to load categories", err);
     }
 }
-
-loadCategories().then(() => {
-    if (params.get("id")) {
-        mode = "edit";
-        productId = params.get("id");
-        pageTitle.textContent = "Edit Product";
-        loadProduct(productId);
-    } else {
-        pageTitle.textContent = "Create Product";
-    }
-});
 
 async function loadProduct(id) {
     try {
         const res = await fetch(`/api/products/${id}`);
         if (!res.ok) throw new Error("Failed to load product");
         const p = await res.json();
+        await loadCategories(p.category);
         populateForm(p);
     } catch (err) {
         console.error(err);
@@ -56,13 +59,11 @@ function populateForm(p) {
     form.elements.subtitle.value = p.subtitle || "";
     form.elements.price.value = p.price || 0;
     form.elements.tag.value = p.tag || "";
-    if (form.elements.category) form.elements.category.value = p.category || "Uncategorized";
-    form.elements.description.value = p.description || "";
     form.elements.features.value = (p.features || []).join("\n");
     form.elements.inStock.checked = p.inStock !== false;
-    form.elements.isFeatured.checked = p.isFeatured === true; 
+    form.elements.isFeatured.checked = p.isFeatured === true;
+    if (form.elements.category) form.elements.category.value = p.category || "";
 
-    
     if (p.imageUrls && p.imageUrls.length) {
         existingUrls = [...p.imageUrls];
     } else if (p.imageUrl) {
@@ -122,7 +123,6 @@ window.removeNew = function (nfIndex) {
     newFileUrls.splice(nfIndex, 1);
     URL.revokeObjectURL(url);
 
-    
     const absoluteIndex = existingUrls.length + nfIndex;
     if (selectedPrimary === absoluteIndex) selectedPrimary = 0;
     else if (selectedPrimary > absoluteIndex) selectedPrimary--;
@@ -160,7 +160,6 @@ imageInput.addEventListener("change", (e) => {
         reader.onload = (event) => {
             const img = new Image();
             img.onload = () => {
-                
                 const resizedBlob = resizeImageToBlob(img, file.name);
                 resizedBlob.then(blob => {
                     const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
@@ -179,10 +178,8 @@ imageInput.addEventListener("change", (e) => {
         reader.readAsDataURL(file);
     });
 
-    
     imageInput.value = "";
 });
-
 
 function resizeImageToBlob(img, originalName) {
     return new Promise((resolve) => {
@@ -219,12 +216,12 @@ form.addEventListener("submit", async (e) => {
     const featuresArr = featuresRaw.split("\n").map(s => s.trim()).filter(Boolean);
     fd.set("features", JSON.stringify(featuresArr));
 
-    
-    const descVal = document.getElementById("productDescription").value;
-    fd.set("description", descVal);
-
     fd.set("inStock", form.elements.inStock.checked ? "true" : "false");
     fd.set("isFeatured", form.elements.isFeatured.checked ? "true" : "false");
+    
+    const catVal = categorySelect.value;
+    if (catVal) fd.set("category", catVal);
+    else fd.delete("category");
 
     fd.delete("images");
 
@@ -238,7 +235,6 @@ form.addEventListener("submit", async (e) => {
     const method = mode === "edit" ? "PUT" : "POST";
 
     try {
-        
         const btn = form.querySelector('button[type="submit"]');
         const oldText = btn.textContent;
         btn.textContent = "Saving...";
@@ -255,7 +251,6 @@ form.addEventListener("submit", async (e) => {
             throw new Error(txt || res.statusText);
         }
 
-        
         alert("Saved successfully!");
         window.location.href = "/admin";
 
@@ -267,50 +262,3 @@ form.addEventListener("submit", async (e) => {
         btn.disabled = false;
     }
 });
-
-
-window.insertTag = function(tag) {
-    const area = document.getElementById("productDescription");
-    const start = area.selectionStart;
-    const end = area.selectionEnd;
-    const text = area.value;
-    const selected = text.substring(start, end);
-
-    let replacement;
-    if (tag === 'br') {
-        replacement = '<br>';
-    } else {
-        replacement = `<${tag}>${selected || 'text'}</${tag}>`;
-    }
-
-    area.value = text.substring(0, start) + replacement + text.substring(end);
-    area.focus();
-    
-    if (selected.length === 0 && tag !== 'br') {
-        area.setSelectionRange(start + tag.length + 2, start + tag.length + 6);
-    }
-};
-
-window.insertLink = function() {
-    const area = document.getElementById("productDescription");
-    if (!area) return;
-    
-    const start = area.selectionStart;
-    const end = area.selectionEnd;
-    const text = area.value;
-    const selected = text.substring(start, end);
-
-    const url = prompt("Enter the full URL:", "https:
-    if(!url || url === "https:
-
-    const linkText = selected || "Link Text";
-    const replacement = `<a href="${url}" target="_blank" rel="noopener">${linkText}</a>`;
-    
-    area.value = text.substring(0, start) + replacement + text.substring(end);
-    
-    
-    const newPos = start + replacement.length;
-    area.setSelectionRange(newPos, newPos);
-    area.focus();
-};
-

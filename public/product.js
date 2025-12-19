@@ -1,6 +1,3 @@
-
-
-
 const WHATSAPP_PHONE = "9477XXXXXXX";
 
 function formatPrice(amount) {
@@ -14,12 +11,10 @@ function getQueryParam(name) {
 
 const productId = getQueryParam("pid");
 
-
 let currentReplyTo = null;
 let currentReplyToName = null;
 let commentTextElGlobal = null;
 let commentStatusElGlobal = null;
-
 
 let slideIndex = 0;
 
@@ -41,7 +36,6 @@ function showSlides(n) {
 
   for (let i = 0; i < slides.length; i++) {
     slides[i].classList.remove("active");
-    
     slides[i].style.display = "none";
   }
 
@@ -56,9 +50,6 @@ function showSlides(n) {
     thumbs[slideIndex].classList.add("active");
   }
 }
-
-
-
 
 async function loadProduct() {
   const container = document.getElementById("detailContainer");
@@ -80,23 +71,19 @@ async function loadProduct() {
 
     if (!container) return;
 
-    
     const imageUrls = Array.isArray(p.imageUrls) && p.imageUrls.length > 0
       ? p.imageUrls
       : (p.imageUrl ? [p.imageUrl] : []);
 
-    
     let imageHtml = '';
 
     if (imageUrls.length === 0) {
       imageHtml = `<div class="detail-image" style="display:flex;align-items:center;justify-content:center;font-size:13px;color:#9ca3af;height:100%;">No image</div>`;
     } else {
-      
       const slides = imageUrls.map((url, idx) => `
         <img src="${url}" class="carousel-slide ${idx === 0 ? 'active' : ''}" alt="${p.name} - ${idx + 1}" data-index="${idx}">
       `).join("");
 
-      
       const thumbsHtml = imageUrls.length > 1 ? `
         <div class="carousel-thumbs-row">
           ${imageUrls.map((url, idx) => `
@@ -127,22 +114,6 @@ async function loadProduct() {
           <p class="detail-subtitle">${p.subtitle || ""}</p>
           <div class="detail-price">${formatPrice(p.price)}</div>
           ${p.inStock === false ? '<div class="product-tag out-of-stock" style="margin:8px 0;display:inline-flex;">Out of Stock</div>' : ''}
-          
-          <div class="detail-description" style="margin: 20px 0; line-height: 1.6; color: var(--text-muted);">
-            ${p.description || ""}
-            <style>
-              .detail-description a {
-                color: var(--accent);
-                text-decoration: underline;
-                font-weight: 500;
-                transition: color 0.2s;
-              }
-              .detail-description a:hover {
-                color: var(--accent-strong);
-              }
-            </style>
-          </div>
-
           <ul class="detail-features">
             ${(p.features || []).map((f) => `<li>${f}</li>`).join("")}
           </ul>
@@ -168,7 +139,7 @@ async function loadProduct() {
           "Price: " + formatPrice(p.price),
         ];
         const message = encodeURIComponent(messageLines.join("\n"));
-        window.location.href = `https:
+        window.location.href = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
       });
     }
   } catch (err) {
@@ -176,9 +147,6 @@ async function loadProduct() {
     if (container) container.innerHTML = "<p>Error loading product.</p>";
   }
 }
-
-
-
 
 async function loadComments() {
   if (!productId) return;
@@ -199,9 +167,6 @@ async function loadComments() {
     console.error("Failed to load comments", e);
   }
 }
-
-
-
 
 function renderComments(comments) {
   const container = document.getElementById("commentsList");
@@ -275,7 +240,6 @@ function renderComments(comments) {
       </div>
     `;
 
-    
     const delBtn = div.querySelector(".comment-delete");
     if (delBtn) {
       delBtn.addEventListener("click", async () => {
@@ -321,7 +285,6 @@ function renderComments(comments) {
       });
     }
 
-    
     const replyBtn = div.querySelector(".comment-reply");
     if (replyBtn && commentTextElGlobal && commentStatusElGlobal) {
       replyBtn.addEventListener("click", () => {
@@ -339,18 +302,12 @@ function renderComments(comments) {
   }
 }
 
-
-
-
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
-
-
-
 
 function initCommentForm() {
   const textEl = document.getElementById("commentText");
@@ -400,7 +357,6 @@ function initCommentForm() {
         if (window.htmlAlert) await htmlAlert("error", "Comment Blocked", msg + (data.banType === 'temporary' ? " You have been temporarily banned." : ""));
         else alert(msg);
 
-        
         setTimeout(() => window.location.reload(), 2000);
         return;
       }
@@ -427,7 +383,7 @@ function initCommentForm() {
 
       if (window.htmlToast) htmlToast("Comment posted successfully!", { variant: "success" });
       statusEl.textContent = "";
-      statusEl.className = "comment-status"; 
+      statusEl.className = "comment-status";
 
       await loadComments();
     } catch (e) {
@@ -438,9 +394,6 @@ function initCommentForm() {
     }
   });
 }
-
-
-
 
 async function initAuthUI() {
   try {
@@ -458,14 +411,12 @@ async function initAuthUI() {
       if (userInfo) {
         userInfo.style.display = "flex";
 
-        
         userInfo.onclick = (e) => {
           e.stopPropagation();
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.toggle("show");
         };
 
-        
         document.addEventListener("click", () => {
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.remove("show");
@@ -473,7 +424,6 @@ async function initAuthUI() {
       }
       if (userName) userName.textContent = data.user.name || "User";
 
-      
       if (userPic) userPic.src = "/avatar?" + Date.now();
 
       loginBtn?.classList.add("hidden");
@@ -487,15 +437,11 @@ async function initAuthUI() {
   }
 }
 
-
 const loginBtn = document.getElementById("loginBtn");
 loginBtn?.addEventListener("click", (e) => {
   e.preventDefault();
   window.location.href = "/login";
 });
-
-
-
 
 function createSnowflakes() {
   const snowflakeCount = 50;
@@ -503,52 +449,56 @@ function createSnowflakes() {
     const flake = document.createElement("div");
     flake.classList.add("snowflake");
 
-    
     const size = Math.random() * 3 + 2 + "px";
     flake.style.width = size;
     flake.style.height = size;
-
-    
     flake.style.left = Math.random() * 100 + "vw";
-
-    
     flake.style.animationDuration = Math.random() * 5 + 5 + "s";
-
-    
     flake.style.animationDelay = Math.random() * 5 + "s";
-
-    
     flake.style.opacity = Math.random() * 0.5 + 0.3;
 
     document.body.appendChild(flake);
   }
 }
 
+async function initAnnouncements() {
+  const bar = document.getElementById("announcement-bar");
+  const content = document.getElementById("ann-content");
+  const closeBtn = document.getElementById("close-ann");
+  if (!bar || !content) return;
 
-
-
-
-
+  try {
+    const res = await fetch("/api/announcements/active");
+    const active = await res.json();
+    if (active && active.length > 0) {
+      const ann = active[0];
+      content.innerHTML = `<span class="ann-title">${ann.title}</span> ${ann.message}`;
+      bar.className = `announcement-bar ${ann.type}`;
+      bar.classList.remove("hidden");
+      closeBtn.onclick = () => {
+        bar.classList.add("hidden");
+        sessionStorage.setItem("ann-closed-" + ann._id, "true");
+      };
+      if (sessionStorage.getItem("ann-closed-" + ann._id)) {
+        bar.classList.add("hidden");
+      }
+    }
+  } catch (err) {}
+}
 
 document.addEventListener("DOMContentLoaded", () => {
-  
   initAuthUI();
-
   loadProduct();
   loadComments();
   initCommentForm();
-
-  
+  initAnnouncements();
   createSnowflakes();
 
-  
   const page = document.querySelector(".page");
   if (page) {
-    
     setTimeout(() => page.classList.add("loaded"), 100);
   }
 
-  
   const scrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -560,4 +510,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".reveal-on-scroll").forEach(el => scrollObserver.observe(el));
 });
-

@@ -1,5 +1,4 @@
-const WHATSAPP_PHONE = "9477XXXXXXX"; 
-
+const WHATSAPP_PHONE = "9477XXXXXXX";
 
 const productGrid = document.getElementById("productGrid");
 const cartBtn = document.getElementById("cartBtn");
@@ -17,9 +16,7 @@ const searchInput = document.getElementById("searchInput");
 const loadingOverlay = document.getElementById("vv-loader");
 const loadingCounter = document.getElementById("vv-loader-counter");
 
-
 if (yearEl) yearEl.textContent = new Date().getFullYear();
-
 
 const navToggle = document.getElementById("navToggle");
 const navCenter = document.querySelector(".nav-center");
@@ -29,7 +26,6 @@ if (navToggle && navCenter) {
     navCenter.classList.toggle("open");
   });
 
-  
   const navLinks = navCenter.querySelectorAll(".nav-link");
   navLinks.forEach(link => {
     link.addEventListener("click", () => {
@@ -38,12 +34,9 @@ if (navToggle && navCenter) {
   });
 }
 
-
 const cart = [];
 let productsCache = [];
 let API_LOCKED = false;
-let currentUser = null; 
-
 
 function formatPrice(n) {
   return "Rs. " + Number(n).toLocaleString("en-LK");
@@ -58,13 +51,9 @@ async function safeFetch(url, opts = {}) {
   return fetch(url, opts);
 }
 
-
 function logClient(action, data) {
   console.log("[client-log]", action, data);
 }
-
-
-
 
 const scrollObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -75,14 +64,11 @@ const scrollObserver = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
 
-
-
-
 function initHeroTypewriter() {
   const el = document.getElementById("heroTypewriter");
   if (!el) return;
 
-  const fullText = el.textContent.trim().replace(/\s+/g, " "); 
+  const fullText = el.textContent.trim().replace(/\s+/g, " ");
   el.textContent = "";
 
   let i = 0;
@@ -94,18 +80,16 @@ function initHeroTypewriter() {
 
     if (isDeleting) {
       el.textContent = fullText.substring(0, currentText.length - 1);
-      speed = 30; 
+      speed = 30;
     } else {
       el.textContent = fullText.substring(0, currentText.length + 1);
-      speed = 50; 
+      speed = 50;
     }
 
     if (!isDeleting && el.textContent === fullText) {
-      
       isDeleting = true;
       speed = 2000;
     } else if (isDeleting && el.textContent === "") {
-      
       isDeleting = false;
       speed = 500;
     }
@@ -113,12 +97,8 @@ function initHeroTypewriter() {
     setTimeout(type, speed);
   }
 
-  
   setTimeout(type, 1000);
 }
-
-
-
 
 function createSnowflakes() {
   const snowflakeCount = 50;
@@ -126,30 +106,17 @@ function createSnowflakes() {
     const flake = document.createElement("div");
     flake.classList.add("snowflake");
 
-    
     const size = Math.random() * 3 + 2 + "px";
     flake.style.width = size;
     flake.style.height = size;
-
-    
     flake.style.left = Math.random() * 100 + "vw";
-
-    
     flake.style.animationDuration = Math.random() * 5 + 5 + "s";
-
-    
     flake.style.animationDelay = Math.random() * 5 + "s";
-
-    
     flake.style.opacity = Math.random() * 0.5 + 0.3;
 
     document.body.appendChild(flake);
   }
 }
-
-
-
-
 
 document.addEventListener("DOMContentLoaded", () => {
   const loader = document.getElementById("vv-loader");
@@ -161,43 +128,34 @@ document.addEventListener("DOMContentLoaded", () => {
   let value = 0;
 
   const interval = setInterval(() => {
-    
     value += Math.floor(Math.random() * 7) + 1;
     if (value >= 100) value = 100;
 
     counter.textContent = value + "%";
 
-    
     if (barFill) {
       const scale = value / 100;
       barFill.style.transform = `scaleX(${scale})`;
     }
 
-    
     counter.classList.remove("vv-tick");
-    
     void counter.offsetWidth;
     counter.classList.add("vv-tick");
 
     if (value === 100) {
       clearInterval(interval);
 
-      
       counter.classList.remove("vv-tick");
       counter.classList.add("vv-done");
 
       setTimeout(() => {
         loader.classList.add("hidden");
-        
         const page = document.querySelector(".page");
         if (page) page.classList.add("loaded");
       }, 450);
     }
   }, 80);
 });
-
-
-
 
 async function initAuthUI() {
   try {
@@ -211,18 +169,15 @@ async function initAuthUI() {
     const userName = document.getElementById("userName");
 
     if (data.loggedIn) {
-      currentUser = data.user; 
       if (userInfo) {
         userInfo.style.display = "flex";
 
-        
         userInfo.onclick = (e) => {
           e.stopPropagation();
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.toggle("show");
         };
 
-        
         document.addEventListener("click", () => {
           const dd = document.getElementById("userDropdown");
           if (dd) dd.classList.remove("show");
@@ -230,7 +185,6 @@ async function initAuthUI() {
       }
       if (userName) userName.textContent = data.user.name || "User";
 
-      
       if (userPic) userPic.src = "/avatar?" + Date.now();
 
       loginBtn?.classList.add("hidden");
@@ -249,9 +203,6 @@ loginBtn?.addEventListener("click", (e) => {
   window.location.href = "/login";
 });
 
-
-
-
 async function loadProducts() {
   try {
     const res = await safeFetch("/api/products");
@@ -259,14 +210,9 @@ async function loadProducts() {
     productsCache = products;
 
     await restoreCartFromServer();
-
     
-    const featuredProducts = products.filter(p => p.isFeatured === true);
-    
-    
-    
-    
-    renderProducts(featuredProducts.length > 0 ? featuredProducts : products.slice(0, 8));
+    const featured = productsCache.filter(p => p.isFeatured === true);
+    renderProducts(featured);
 
     logClient("PRODUCTS_VIEW", { total: products.length });
   } catch (err) {
@@ -274,19 +220,18 @@ async function loadProducts() {
   }
 }
 
-
 function attachCardTilt(card) {
-  const strength = 10; 
+  const strength = 10;
 
   function handleMove(e) {
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left; 
-    const y = e.clientY - rect.top;  
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     const midX = rect.width / 2;
     const midY = rect.height / 2;
 
-    const rotateY = ((x - midX) / midX) * strength;   
-    const rotateX = -((y - midY) / midY) * strength;  
+    const rotateY = ((x - midX) / midX) * strength;
+    const rotateX = -((y - midY) / midY) * strength;
 
     card.classList.add("is-tilting");
     card.style.transform = `perspective(700px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
@@ -306,10 +251,8 @@ function renderProducts(arr) {
   arr.forEach((p) => {
     const card = document.createElement("div");
     card.className = "product-card reveal-on-scroll";
-    scrollObserver.observe(card); 
+    scrollObserver.observe(card);
 
-
-    
     const imageUrl = Array.isArray(p.imageUrls) && p.imageUrls[0]
       ? p.imageUrls[0]
       : p.imageUrl;
@@ -331,10 +274,8 @@ function renderProducts(arr) {
       </div>
     `;
 
-    
     attachCardTilt(card);
 
-    
     const cartBtn = card.querySelector(".add-cart-btn");
     if (cartBtn && p.inStock !== false) {
       cartBtn.addEventListener("click", () => {
@@ -346,9 +287,6 @@ function renderProducts(arr) {
   });
 }
 
-
-
-
 function openCart() {
   cartDrawer.classList.add("open");
   cartOverlay.classList.remove("hidden");
@@ -359,13 +297,13 @@ function closeCart() {
 }
 
 cartBtn?.addEventListener("click", () => {
-    if (!currentUser) {
-        if (confirm("Please log in to view your cart.")) {
-            window.location.href = "/login";
-        }
-        return;
-    }
-    openCart();
+  const userInfo = document.getElementById("userInfo");
+  if (!userInfo || userInfo.style.display === "none") {
+    alert("Please login to view your cart.");
+    window.location.href = "/login";
+    return;
+  }
+  openCart();
 });
 closeCartBtn?.addEventListener("click", closeCart);
 hideCartBtn?.addEventListener("click", closeCart);
@@ -405,13 +343,6 @@ function updateCartUI() {
 }
 
 async function addToCart(p) {
-  if (!currentUser) {
-    if (confirm("Please log in to add items to your cart.")) {
-      window.location.href = "/login";
-    }
-    return;
-  }
-
   const existing = cart.find((i) => i.id === p._id);
   if (existing) existing.quantity += 1;
   else
@@ -476,28 +407,14 @@ async function restoreCartFromServer() {
   }
 }
 
-
-
-
-checkoutBtn?.addEventListener("click", async () => {
+checkoutBtn?.addEventListener("click", () => {
   if (!cart.length) return;
-  try {
-      const res = await fetch("/api/checkout-session", { credentials: "include" });
-      const data = await res.json();
-      if (data.token) {
-          window.location.href = `/checkout?q=${data.token}`;
-      }
-  } catch (err) {
-      console.error("Checkout session failed", err);
-  }
+  window.location.href = "/checkout";
 });
-
-
-
 
 searchInput?.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
-    e.preventDefault(); 
+    e.preventDefault();
     const q = searchInput.value.toLowerCase().trim();
     if (!q) return renderProducts(productsCache);
 
@@ -513,17 +430,41 @@ searchInput?.addEventListener("keydown", (e) => {
   }
 });
 
+async function initAnnouncements() {
+  const bar = document.getElementById("announcement-bar");
+  const content = document.getElementById("ann-content");
+  const closeBtn = document.getElementById("close-ann");
+  if (!bar || !content) return;
 
+  try {
+    const res = await fetch("/api/announcements/active");
+    const active = await res.json();
+    if (active && active.length > 0) {
+      const ann = active[0];
+      content.innerHTML = `<span class="ann-title">${ann.title}</span> ${ann.message}`;
+      bar.className = `announcement-bar ${ann.type}`;
+      bar.classList.remove("hidden");
+      
+      closeBtn.onclick = () => {
+        bar.classList.add("hidden");
+        sessionStorage.setItem("ann-closed-" + ann._id, "true");
+      };
 
+      if (sessionStorage.getItem("ann-closed-" + ann._id)) {
+        bar.classList.add("hidden");
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load announcements", err);
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   initAuthUI();
   loadProducts();
   initHeroTypewriter();
   createSnowflakes();
+  initAnnouncements();
 
-  
   document.querySelectorAll(".reveal-on-scroll").forEach(el => scrollObserver.observe(el));
 });
-
-

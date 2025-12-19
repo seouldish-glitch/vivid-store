@@ -392,17 +392,14 @@
       animation: shoot linear infinite;
     }
   </style>
-  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>
 
   <div class="vignette"></div>
   <div class="glow-blob"></div>
-
   <div class="login-wrapper">
     <div class="login-card">
-
       <div class="logo-row">
         <img src="https://www.vividvision.lk/l.png" class="logo-img" />
         <div class="brand-col">
@@ -410,29 +407,23 @@
           <span class="brand-sub">Solar · Security · Smart Systems</span>
         </div>
       </div>
-
       <h1 class="login-heading">Welcome back</h1>
       <p class="login-subtext">
         Sign in with Google to continue.
       </p>
-
       <button class="google-btn" onclick="window.location.href='/auth/google'">
         <img src="/google.svg" class="google-svg" />
         <span>Continue with Google</span>
       </button>
-
-
       <div class="divider">or</div>
-
       <p class="footer-text">Need help? Visit our <a href="/contact.html" style="color:var(--gold)">contact page</a>.
       </p>
-
     </div>
   </div>
 
   <script>
     function createStars() {
-      const starCount = 40;
+      const starCount = 40; 
 
       for (let i = 0; i < starCount; i++) {
         const star = document.createElement("div");
@@ -445,7 +436,6 @@
         star.style.left = Math.random() * 100 + "vw";
 
         star.style.animationDuration = Math.random() * 7 + 8 + "s";
-
         star.style.animationDelay = Math.random() * 8 + "s";
 
         star.style.opacity = Math.random() * 0.5 + 0.3;
@@ -458,6 +448,7 @@
         document.body.appendChild(star);
       }
     }
+
     document.addEventListener("DOMContentLoaded", () => {
       createStars();
     });

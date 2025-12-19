@@ -6,7 +6,7 @@
   <title>Product | Vivid Vision</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-
+  <!-- CSP (same idea as before, safe for WhatsApp + images) -->
   <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         connect-src 'self' https://wa.me;
@@ -16,17 +16,24 @@
         frame-ancestors 'none';
       " />
 
+  <!-- Main site styles -->
   <link rel="stylesheet" href="style.css" />
-
+  <!-- Small extra styles just for comments/admin UI -->
   <link rel="stylesheet" href="product-page.css" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>
   <div class="page">
-   
+    <div id="announcement-bar" class="announcement-bar hidden">
+      <div class="ann-container">
+        <span id="ann-content"></span>
+        <button id="close-ann" class="close-ann">&times;</button>
+      </div>
+    </div>
+    <!-- Neon Glow Background -->
     <div class="glow-blob"></div>
 
+    <!-- NAVBAR (same structure as index, but product links go back to home sections) -->
     <header class="nav">
       <div class="nav-left">
         <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
@@ -38,7 +45,7 @@
 
       <nav class="nav-links nav-center">
         <a href="/" class="nav-link">Home</a>
-        <a href="/products" class="nav-link">Products</a>
+        <a href="/#products" class="nav-link">Products</a>
         <a href="/#why-us" class="nav-link">Why us</a>
         <a href="/#faq" class="nav-link">FAQ</a>
         <a href="/contact" class="nav-link">Contact</a>
@@ -48,6 +55,7 @@
         <div id="userInfo" class="user-info">
           <img id="userPic" class="user-pic" src="" alt="User" />
           <span id="userName" class="user-name"></span>
+          <!-- Dropdown -->
           <div id="userDropdown" class="user-dropdown">
             <a href="/auth/logout" class="dropdown-item">Log out</a>
           </div>
@@ -56,14 +64,18 @@
       </div>
     </header>
 
+    <!-- MAIN CONTENT -->
     <section class="section">
+      <!-- Product detail card -->
       <div id="detailContainer" class="detail-container reveal-on-scroll">
         <p>Loading product...</p>
       </div>
 
+      <!-- COMMENTS -->
       <div class="comments-section reveal-on-scroll">
         <h2 class="comments-title">Customer comments</h2>
 
+        <!-- Comment form -->
         <div class="comment-form-card">
           <textarea id="commentText" class="comment-input" placeholder="Write a comment..." rows="3"></textarea>
           <div class="comment-form-footer"></div>
@@ -74,10 +86,12 @@
         </div>
       </div>
 
+      <!-- Comments list -->
       <div id="commentsList" class="comments-list reveal-on-scroll"></div>
   </div>
   </section>
 
+  <!-- FOOTER (same style as index) -->
   <footer class="footer">
     <div class="footer-left">
       <div class="footer-brand">Vivid Vision</div>
@@ -95,6 +109,7 @@
   </footer>
   </div>
 
+  <!-- Only product logic here (no app.js, so it won't break products grid stuff) -->
   <script src="modals.js"></script>
   <script src="product.js"></script>
 </body>

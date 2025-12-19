@@ -77,7 +77,6 @@
       100% { transform: translateY(0px); }
     }
 
-    /* Icon */
     .ban-icon {
       width: 64px;
       height: 64px;
@@ -112,7 +111,6 @@
       line-height: 1.6;
     }
 
-    /* Email display */
     .email-display {
       text-align: center;
       margin-bottom: 24px;
@@ -137,7 +135,6 @@
       word-break: break-all;
     }
 
-    /* Reason box */
     .reason-box {
       background: rgba(220, 38, 38, 0.1);
       border: 1px solid rgba(220, 38, 38, 0.3);
@@ -160,7 +157,6 @@
       line-height: 1.5;
     }
 
-    /* Button */
     .back-btn {
       width: 100%;
       padding: 12px 16px;
@@ -179,7 +175,6 @@
       transform: translateY(-2px);
     }
 
-    /* Footer */
     .footer-text {
       text-align: center;
       margin-top: 20px;
@@ -196,7 +191,6 @@
       text-decoration: underline;
     }
 
-    /* Ban details */
     .ban-details {
       background: rgba(220, 38, 38, 0.05);
       border: 1px solid rgba(220, 38, 38, 0.2);
@@ -225,18 +219,15 @@
       font-weight: 500;
     }
 
-    /* Loading state */
     .loading {
       text-align: center;
       color: var(--muted);
       font-size: 15px;
     }
   </style>
-  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>
-  
   <div class="glow-blob"></div>
 
   <div class="banned-wrapper">
@@ -294,7 +285,6 @@
   </div>
 
   <script>
-    // Load ban information
     (async () => {
       try {
         const response = await fetch('/api/ban-info', { credentials: 'include' });
@@ -302,11 +292,9 @@
         if (response.ok) {
           const data = await response.json();
           
-          // Show content
           document.getElementById('loadingState').style.display = 'none';
           document.getElementById('contentState').style.display = 'block';
           
-          // Display email
           const emailEl = document.getElementById('bannedEmail');
           if (data.email) {
             emailEl.textContent = data.email;
@@ -316,12 +304,10 @@
             emailEl.textContent = 'Unknown';
           }
           
-          // Display reason
           if (data.reason) {
             document.getElementById('banReason').textContent = data.reason;
           }
           
-          // Show ban details
           const banDetails = document.getElementById('banDetails');
           banDetails.style.display = 'block';
           
@@ -330,7 +316,6 @@
             document.getElementById('bannedAt').textContent = bannedDate.toLocaleDateString() + ' ' + bannedDate.toLocaleTimeString();
           }
           
-          // Show expiration if temporary ban
           if (data.expiresAt && data.banType === 'temporary') {
             const expiresDate = new Date(data.expiresAt);
             const now = new Date();
@@ -338,7 +323,6 @@
             expiresItem.style.display = 'flex';
             document.getElementById('expiresAt').textContent = expiresDate.toLocaleDateString() + ' ' + expiresDate.toLocaleTimeString();
             
-            // Show time remaining
             const timeRemaining = expiresDate - now;
             if (timeRemaining > 0) {
               const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
@@ -349,7 +333,6 @@
             document.getElementById('permanentItem').style.display = 'flex';
           }
         } else {
-          // If API fails, show error
           document.getElementById('loadingState').textContent = 'Failed to load ban information.';
         }
       } catch (err) {
@@ -360,5 +343,3 @@
   </script>
 </body>
 </html>
-
-

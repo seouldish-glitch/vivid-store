@@ -6,7 +6,6 @@
   <title>Vivid Vision | Store</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>
@@ -20,6 +19,12 @@
   </div>
 
   <div class="page">
+    <div id="announcement-bar" class="announcement-bar hidden">
+      <div class="ann-container">
+        <span id="ann-content"></span>
+        <button id="close-ann" class="close-ann">&times;</button>
+      </div>
+    </div>
     <header class="nav">
       <div class="nav-left">
         <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
@@ -28,7 +33,6 @@
           <span class="nav-subtitle">Solar · Security · Smart Systems</span>
         </div>
       </div>
-
       <nav class="nav-links nav-center">
         <a href="/" class="nav-link">Home</a>
         <a href="/products" class="nav-link">Products</a>
@@ -36,7 +40,6 @@
         <a href="#faq" class="nav-link">FAQ</a>
         <a href="/contact" class="nav-link">Contact</a>
       </nav>
-
       <div class="nav-right">
         <div id="userInfo" class="user-info">
           <img id="userPic" class="user-pic" src="" alt="User" />
@@ -46,18 +49,12 @@
           </div>
         </div>
         <a href="/login" class="btn-outline" id="loginBtn">Login</a>
-
-        
         <button id="navToggle" class="nav-toggle" type="button" aria-label="Toggle navigation">
           ☰
         </button>
       </div>
-
     </header>
-
-
     <section class="hero">
-
       <div class="hero-bg-flow">
         <div class="flow-blob flow-1"></div>
         <div class="flow-blob flow-2"></div>
@@ -76,7 +73,7 @@
           built for speed, reliability, and long-term support.
         </p>
         <div class="hero-actions">
-          <a href="#products" class="btn-primary">Browse products</a>
+          <a href="/products" class="btn-primary">Browse products</a>
           <a href="https://wa.me/94XXXXXXXXX" target="_blank" rel="noopener noreferrer" class="btn-outline">
             Chat on WhatsApp
           </a>
@@ -92,31 +89,22 @@
           </div>
         </div>
       </div>
-
-   
       <div class="hero-right">
         <div class="hero-logo-wrap">
           <img src="hero-image.png" alt="Vivid Vision Logo" class="hero-logo-img" />
         </div>
       </div>
     </section>
-
-
     <section id="products" class="section">
       <div class="section-header reveal-on-scroll">
         <h2>Featured products</h2>
         <p>Carefully selected, installed, and supported by Vivid Vision.</p>
       </div>
-
-
       <div class="products-toolbar">
         <input id="searchInput" type="text" class="search-input" placeholder="Search by name, feature, or tag..." />
       </div>
-
       <div id="productGrid" class="product-grid"></div>
     </section>
-
-  
     <section id="why-us" class="section">
       <div class="section-header reveal-on-scroll">
         <h2>Why customers choose Vivid Vision</h2>
@@ -146,7 +134,6 @@
 
       </div>
     </section>
-
     <section id="faq" class="section section-faq">
       <div class="section-header reveal-on-scroll">
         <h2>FAQ</h2>
@@ -174,9 +161,7 @@
           </p>
         </div>
       </div>
-
     </section>
-
     <footer class="footer">
       <div class="footer-left">
         <div class="footer-brand">Vivid Vision</div>
@@ -193,7 +178,6 @@
       </div>
     </footer>
   </div>
-
   <div id="cartOverlay" class="cart-overlay hidden"></div>
   <aside id="cartDrawer" class="cart-drawer">
     <div class="cart-header">
@@ -206,19 +190,16 @@
         <span id="cartSubtotal">Rs. 0</span>
       </div>
 
-
       <button id="hideCartBtn" class="btn-outline cart-hide">
         Continue browsing
       </button>
 
-
       <button id="checkoutBtn" class="btn-primary cart-checkout">
-        Checkout on WhatsApp
+        Checkout
       </button>
     </div>
   </aside>
 
- 
   <button id="cartBtn" class="cart-fab">
     <span id="cartCount" class="cart-count">0</span>
     <span>Cart</span>

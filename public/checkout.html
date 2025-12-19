@@ -1,271 +1,550 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8" />
-  <title>Checkout | Vivid Vision</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
-  <style>
-    .checkout-container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Vivid Vision</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --input-bg: #f3f4f6;
+            --input-border: #d1d5db;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+            --text-dark: #0f172a;
+        }
 
-    .checkout-form-card {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
+        body {
+            background: #050509; 
+            color: var(--text-dark);
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at top right, rgba(245, 200, 76, 0.08), transparent 400px),
+                radial-gradient(circle at bottom left, rgba(245, 200, 76, 0.05), transparent 400px);
+        }
 
-    .checkout-header {
-      margin-bottom: 25px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 15px;
-    }
+        .checkout-container {
+            max-width: 650px;
+            margin: 40px auto 100px;
+            padding: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 10;
+        }
 
-    .checkout-header h1 {
-      font-size: 24px;
-      margin: 0;
-      color: #fff;
-    }
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
+        .checkout-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+            color: var(--text-dark); 
+        }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+        .checkout-header p {
+            color: #475569; 
+            font-size: 15px;
+            font-weight: 400;
+        }
 
-    .form-group.full {
-      grid-column: 1 / -1;
-    }
+        .checkout-form {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
 
-    label {
-      font-size: 14px;
-      color: #94a3b8;
-      font-weight: 500;
-    }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-    .input-field {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 12px;
-      color: #fff;
-      font-size: 15px;
-      transition: all 0.2s;
-    }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-left: 4px;
+        }
 
-    .input-field:focus {
-      outline: none;
-      border-color: #f5c84c;
-      background: rgba(255, 255, 255, 0.08);
-    }
+        .input-custom {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            border-radius: 14px;
+            padding: 16px 20px;
+            color: var(--text-dark);
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
 
-    .input-field option {
-      background: #181920;
-      color: #fff;
-    }
+        .input-custom:focus {
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(245, 200, 76, 0.15);
+        }
 
-    .order-summary {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 30px;
-    }
+        select.input-custom {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 20px;
+            padding-right: 48px;
+        }
 
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      color: #cbd5e1;
-    }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
+        }
 
-    .summary-total {
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding-top: 10px;
-      margin-top: 10px;
-      font-weight: 700;
-      color: #f5c84c;
-      font-size: 18px;
-    }
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
 
-    .submit-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #f5c84c 0%, #d97706 100%);
-      color: #000;
-      font-weight: 700;
-      padding: 16px;
-      border: none;
-      border-radius: 10px;
-      margin-top: 30px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: transform 0.2s;
-    }
+        .prefix {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 16px;
+            font-weight: 500;
+            pointer-events: none;
+        }
 
-    .submit-btn:hover {
-      transform: translateY(-2px);
-    }
+        .input-prefixed {
+            padding-left: 60px !important;
+        }
 
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            padding: 4px;
+        }
+
+        .checkbox-group input {
+            appearance: none;
+            flex-shrink: 0;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--input-border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            margin-top: 2px;
+        }
+
+        .checkbox-group input:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .checkbox-group input:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000;
+            font-size: 14px;
+            font-weight: 900;
+        }
+
+        .checkbox-group span {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.5;
+            user-select: none;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            height: 60px;
+            border: none;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 15px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--accent) 0%, #d4a017 100%);
+            color: #000;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 10px 30px -10px rgba(245, 200, 76, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px -10px rgba(245, 200, 76, 0.6);
+            background: linear-gradient(135deg, #ffcf4d 0%, var(--accent) 100%);
+        }
+
+        .checkout-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+        .checkout-btn::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+            pointer-events: none;
+        }
+
+        .checkout-btn:hover::after {
+            left: 100%;
+        }
+
+        .checkout-btn i {
+            font-size: 18px;
+        }
+
+        #error-msg {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+            margin-bottom: 24px;
+            text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+        @media (max-width: 768px) {
+            .checkout-container {
+                margin: 20px 16px 60px;
+                padding: 30px 20px;
+                border-radius: 24px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .checkout-header h1 {
+                font-size: 28px;
+            }
+
+            .nav {
+                padding: 0 16px;
+            }
+        }
+        textarea.input-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        textarea.input-custom::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .order-summary {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .summary-header h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .summary-items {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .summary-item {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .item-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #1a1d29;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .item-meta {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .item-price {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .summary-total {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .total-label {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .total-amount {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+        .modal-inner {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            padding: 50px 40px;
+            border-radius: 32px;
+            border: 1px solid var(--accent-soft);
+            max-width: 440px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8);
+            animation: modalPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(245, 200, 76, 0.1);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: var(--accent);
+            font-size: 40px;
+            text-shadow: 0 0 20px rgba(245, 200, 76, 0.4);
+        }
+
+        .modal-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: black;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .modal-text {
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 35px;
+            font-size: 15px;
+        }
+
+        .vv-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 40px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow: 0 10px 25px -5px rgba(245, 200, 76, 0.4);
+            text-decoration: none;
+        }
+
+        .vv-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 35px -5px rgba(245, 200, 76, 0.6);
+            background: #ffcf4d;
+        }
+        .nav-brand{
+        color: white;
+        }
+        .vv-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.85) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+    </style>
 </head>
-
 <body>
-  <div id="vv-loader" class="vv-loader">
-    <div class="vv-loader-inner">
-      <div id="vv-loader-counter" class="vv-loader-counter">0%</div>
-      <div class="vv-loader-bar">
-        <div id="vv-loader-bar-fill" class="vv-loader-bar-fill"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page">
-    <header class="nav">
-      <div class="nav-left">
-        <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img" />
-        <div class="nav-title">
-          <span class="nav-brand">VIVID VISION</span>
-          <span class="nav-subtitle">Solar · Security · Smart Systems</span>
-        </div>
-      </div>
-
-      <nav class="nav-links nav-center">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/products" class="nav-link">Products</a>
-        <a href="/#why-us" class="nav-link">Why us</a>
-        <a href="/#faq" class="nav-link">FAQ</a>
-        <a href="/contact" class="nav-link">Contact</a>
-      </nav>
-
-      <div class="nav-right">
-        <div id="userInfo" class="user-info">
-          <img id="userPic" class="user-pic" src="" alt="User" />
-          <span id="userName" class="user-name"></span>
-        </div>
-        <a href="/login" class="btn-outline" id="loginBtn">Login</a>
-      </div>
-    </header>
-
-    <main style="padding-top: 100px; min-height:80vh;">
-      <div class="checkout-container">
-        <div class="checkout-form-card reveal-on-scroll">
-          <div class="checkout-header">
-            <h1>Checkout</h1>
-            <p style="color:#94a3b8; margin-top:5px;">Please fill in your details to complete the order.</p>
-          </div>
-
-          <form id="checkoutForm">
-            <div class="form-grid">
-              
-              <div class="form-group full">
-                <label>Full Name</label>
-                <input type="text" name="fullName" class="input-field" required placeholder="John Doe">
-              </div>
-
-              <div class="form-group">
-                <label>Phone Number</label>
-                <input type="tel" name="phone" class="input-field" required placeholder="077 123 4567">
-              </div>
-
-              <div class="form-group">
-                <label>Date of Birth</label>
-                <input type="date" name="dob" class="input-field" required>
-                <small style="color:#ef4444; display:none;" id="dobError">You must be at least 16 years old.</small>
-              </div>
-
-              <div class="form-group full">
-                <label>Address</label>
-                <input type="text" name="address" class="input-field" required placeholder="123 Main Street">
-              </div>
-
-              <div class="form-group">
-                <label>Postal Code</label>
-                <input type="text" name="postalCode" class="input-field" required placeholder="10100">
-              </div>
-
-              <div class="form-group">
-                <label>Province</label>
-                <select name="province" class="input-field" required>
-                  <option value="" disabled selected>Select Province</option>
-                  <option value="Central">Central</option>
-                  <option value="Eastern">Eastern</option>
-                  <option value="North Central">North Central</option>
-                  <option value="Northern">Northern</option>
-                  <option value="North Western">North Western</option>
-                  <option value="Sabaragamuwa">Sabaragamuwa</option>
-                  <option value="Southern">Southern</option>
-                  <option value="Uva">Uva</option>
-                  <option value="Western">Western</option>
-                </select>
-              </div>
-
-              
-              <div class="form-group full">
-                 
-                 
-                 <div class="g-recaptcha" data-sitekey="6Ldn5y4sAAAAAJP5IsIVVdAsta90caOuG9NtTRbT"></div>
-                 <small style="color:#ef4444; display:none;" id="captchaError">Please complete the captcha.</small>
-              </div>
-
-
-
-              <div class="form-group full" style="flex-direction:row; align-items:center; gap:10px; margin-top:10px;">
-                <input type="checkbox" id="termsCheckbox" required style="width:16px; height:16px; accent-color: #f5c84c;">
-                <label for="termsCheckbox" style="margin:0; font-size:14px; color:#cbd5e1; cursor:pointer;">
-                  By clicking this you agree to our <a href="#" id="tosLink" style="color:#f5c84c; text-decoration:none;">Terms of Service</a>
-                </label>
-              </div>
-
+    <div class="page">
+        <header class="nav">
+            <div class="nav-left">
+                <img src="https://www.vividvision.lk/l.png" alt="Vivid Vision logo" class="nav-logo-img">
+                <div class="nav-title">
+                    <span class="nav-brand">VIVID VISION</span>
+                    <span class="nav-subtitle">Solar · Security · Smart Systems</span>
+                </div>
             </div>
+            <div class="nav-right">
+                <a href="/" class="btn-secondary">Back to store</a>
+            </div>
+        </header>
 
+        <div class="checkout-container">
+            <div class="checkout-header">
+                <h1>Complete Request</h1>
+                <p>Provide your details and we will contact you for confirmation</p>
+            </div>
             <div class="order-summary">
-              <div id="checkoutItems"></div>
-              <div class="summary-row summary-total">
-                <span>Total</span>
-                <span id="checkoutTotal">Rs. 0</span>
-              </div>
+                <div class="summary-header">
+                    <h2>Request Summary</h2>
+                    <span id="item-count" style="font-size: 12px; color: var(--muted);">0 items</span>
+                </div>
+                <div id="summary-items" class="summary-items">
+                </div>
+                <div class="summary-total">
+                    <span class="total-label">Estimated Total</span>
+                    <span id="total-price" class="total-amount">Rs. 0</span>
+                </div>
             </div>
+            <div id="error-msg"></div>
+            <form id="checkout-form" class="checkout-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="fullName" class="input-custom" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" name="dob" id="dob-input" class="input-custom" required>
+                    </div>
+                </div>
 
-            <button type="submit" class="submit-btn" id="placeOrderBtn">Confirm Order</button>
-          </form>
+                <div class="form-group">
+                    <label>Shipping / Contact Address</label>
+                    <textarea name="address" class="input-custom" style="height:90px; resize:none;" required placeholder="No 123, Street Name, City"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <div class="input-wrapper">
+                            <span class="prefix">+94</span>
+                            <input type="text" name="phone" id="phone-input" class="input-custom input-prefixed" required maxlength="10" placeholder="771234567">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Postal Code</label>
+                        <input type="text" name="postalCode" class="input-custom" required placeholder="10110">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Province</label>
+                    <select name="province" class="input-custom" required>
+                        <option value="" disabled selected>Select Province</option>
+                        <option value="Central">Central</option>
+                        <option value="Eastern">Eastern</option>
+                        <option value="North Central">North Central</option>
+                        <option value="Northern">Northern</option>
+                        <option value="North Western">North Western</option>
+                        <option value="Sabaragamuwa">Sabaragamuwa</option>
+                        <option value="Southern">Southern</option>
+                        <option value="Uva">Uva</option>
+                        <option value="Western">Western</option>
+                    </select>
+                </div>
+
+                <label class="checkbox-group">
+                    <input type="checkbox" name="agree" required>
+                    <span>I agree to the <a href="#" style="color:var(--accent); text-decoration: underline;">Terms of Service</a> and confirm my details are correct. (Minimum age: 16 years)</span>
+                </label>
+
+                <button type="submit" class="btn-primary checkout-btn">Send Request</button>
+            </form>
         </div>
-      </div>
-    </main>
 
-    <footer class="footer">
-      <div class="footer-left">
-        <div class="footer-brand">Vivid Vision</div>
-        <div class="footer-text">
-          Solar · Security · Smart Systems<br />
-          © <span id="year"></span> Vivid Vision. All rights reserved.
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-inner">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Sending Request...</p>
+            </div>
         </div>
-      </div>
-    </footer>
-  </div>
+    </div>
+    <div id="success-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(5,5,9,0.95); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); z-index:2000; align-items:center; justify-content:center;">
+        <div class="modal-inner">
+            <div class="modal-icon">✓</div>
+            <h2 class="modal-title">Request Sent!</h2>
+            <p class="modal-text">Thank you for your inquiry. Our team will contact you shortly via phone or email for final confirmation.</p>
+            <button class="vv-btn" onclick="window.location.href='/'">Return to Home</button>
+        </div>
+    </div>
 
-  <script src="app.js"></script>
-  <script src="modals.js"></script>
-  <script src="checkout.js"></script>
+    <script src="checkout.js"></script>
 </body>
-
 </html>
-
