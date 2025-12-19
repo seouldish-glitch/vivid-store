@@ -448,6 +448,7 @@ app.post("/api/ban-appeal", async (req, res) => {
   }
 });
 
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/banned", (req, res) => res.sendFile(path.join(__dirname, "public", "banned.html")));
 app.get("/admin/product-editor", requireAdmin, (req, res) => res.sendFile(path.join(__dirname, "public", "admin-product-editor.html")));
 app.get("/admin", requireAdmin, (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
@@ -585,6 +586,9 @@ app.get("/checkout", requireUser, (req, res) => {
 });
 
 app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("*", (req, res) => {
     if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
     res.status(404).sendFile(path.join(__dirname, "public", "404.html"));

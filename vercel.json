@@ -7,17 +7,17 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/auth/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    }
-  ]
+    { "src": "/api/(.*)", "dest": "/server.js" },
+    { "src": "/auth/(.*)", "dest": "/server.js" },
+    { "src": "/avatar(.*)", "dest": "/server.js" },
+    { "src": "/(index|checkout|products|product|contact|login|admin|admin/product-editor|banned|home)", "dest": "/server.js" },
+    { "src": "/favicon.ico", "dest": "/public/favicon.ico" },
+    { "src": "/(css|js|images|assets)/(.*)", "dest": "/public/$1/$2" },
+    { "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|webp|svg|json))", "dest": "/public/$1" },
+    { "src": "/", "dest": "/server.js" },
+    { "src": "/(.*)", "dest": "/server.js" }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
