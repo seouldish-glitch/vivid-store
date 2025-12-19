@@ -15,7 +15,7 @@
     "express-session": "^1.17.3",
     "mongoose": "^8.3.0",
     "multer": "^2.0.2",
-    "multer-storage-cloudinary": "^5.0.0",
+    "@fluidjs/multer-cloudinary": "^1.0.4",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0"
   },
