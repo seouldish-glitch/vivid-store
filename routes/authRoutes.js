@@ -5,13 +5,13 @@ const { logEvent } = require("../utils/discordLogger");
 
 const router = express.Router();
 
-
+// Start Google login
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-
+// Google callback
 router.get(
   "/google/callback",
   passport.authenticate("google", {
@@ -35,7 +35,7 @@ router.get(
   }
 );
 
-
+// Current user
 router.get("/me", (req, res) => {
   if (!req.user) return res.json({ user: null });
 
@@ -50,7 +50,7 @@ router.get("/me", (req, res) => {
   });
 });
 
-
+// Logout
 router.post("/logout", async (req, res) => {
   if (req.user) {
     await logEvent({

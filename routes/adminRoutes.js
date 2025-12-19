@@ -5,70 +5,48 @@ const { logEvent } = require("../utils/discordLogger");
 
 const router = express.Router();
 const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const path = require("path");
+const fs = require("fs");
 
-
+// Models
 const Product = mongoose.model("Product");
 const User = mongoose.model("User");
 const Comment = mongoose.model("Comment");
 const Category = mongoose.model("Category");
-const Order = mongoose.model("Order");
 let BannedUser;
-
-const SUPER_ADMINS = (process.env.ADMIN_EMAILS || "")
-  .split(",")
-  .map((s) => s.trim().toLowerCase())
-  .filter(Boolean);
-
-function isSuperAdmin(email) {
-  return SUPER_ADMINS.includes(email.toLowerCase());
-}
 try {
   BannedUser = mongoose.model("BannedUser");
 } catch (e) {
-  
+  // If not yet loaded
   BannedUser = require("../models/BannedUser");
 }
 
+// Cloudinary config
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'vivid-vision/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-    transformation: [{ width: 1200, height: 900, crop: 'fill', quality: 'auto' }]
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 
+    folder: "vivid-store", // folder in cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image uploads are allowed"));
-    }
-    cb(null, true);
-  }
 });
 
+const upload = multer({ storage });
 
-
+// Require auth + admin for all routes
 router.use(requireAuth, requireAdmin);
 
-
-
-
-
+// ----------------------------------------------------
+// USERS
+// ----------------------------------------------------
 router.get("/users", async (req, res) => {
   try {
     const { search, page = 1, limit = 20 } = req.query;
@@ -96,65 +74,20 @@ router.get("/users", async (req, res) => {
   }
 });
 
-router.post("/users/:id/promote", async (req, res) => {
-  if (!isSuperAdmin(req.user.email)) {
-    return res.status(403).json({ error: "Only Super Admins can promote users." });
-  }
-  try {
-    const user = await User.findByIdAndUpdate(req.params.id, { isAdmin: true }, { new: true });
-    await logEvent({
-      category: "ADMIN",
-      action: "USER_PROMOTE",
-      user: { name: req.user.name, email: req.user.email },
-      meta: { promotedUser: user.email }
-    });
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ error: "Promotion failed" });
-  }
-});
-
-router.post("/users/:id/demote", async (req, res) => {
-  if (!isSuperAdmin(req.user.email)) {
-    return res.status(403).json({ error: "Only Super Admins can demote users." });
-  }
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // Prevent demoting main owner
-    if (user.email === "owner@example.com") {
-        return res.status(403).json({ error: "Cannot demote owner" });
-    }
-
-    user.isAdmin = false;
-    await user.save();
-
-    await logEvent({
-      category: "ADMIN",
-      action: "USER_DEMOTE",
-      user: { name: req.user.name, email: req.user.email },
-      meta: { demotedUser: user.email }
-    });
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ error: "Demotion failed" });
-  }
-});
-
 router.post("/users/:id/ban", async (req, res) => {
   try {
     const { reason, banType, banDuration } = req.body;
     const userToBan = await User.findById(req.params.id);
     if (!userToBan) return res.status(404).json({ error: "User not found" });
 
-    
-    if (userToBan.isAdmin && userToBan.email !== "owner@example.com") { 
-      
-      
+    // Don't ban other admins (unless you are super admin, but let's just block it for safety)
+    if (userToBan.isAdmin && userToBan.email !== "owner@example.com") {
+      // Simple check
+      // warn but maybe allow if strict? let's block banning admins for now to prevent lockout wars
+      // return res.status(403).json({ error: "Cannot ban an admin" });
     }
 
-    
+    // Determine expiration
     let expiresAt = null;
     if (banType === "temporary" && banDuration) {
       const hours = parseInt(banDuration);
@@ -163,7 +96,7 @@ router.post("/users/:id/ban", async (req, res) => {
       }
     }
 
-    
+    // Create/Update Ban record
     await BannedUser.findOneAndUpdate(
       { "user.email": userToBan.email },
       {
@@ -172,26 +105,26 @@ router.post("/users/:id/ban", async (req, res) => {
           name: userToBan.name,
           email: userToBan.email,
           googleId: userToBan.googleId,
-          picture: userToBan.picture
+          picture: userToBan.picture,
         },
         reason: reason || "Violation of terms",
         bannedAt: new Date(),
         expiresAt,
         banType: banType || "permanent",
-        bannedBy: req.user.email
+        bannedBy: req.user.email,
       },
       { upsert: true, new: true }
     );
 
-    
+    // Delete the user account (Snapshot is kept in BannedUser)
     await User.deleteOne({ _id: userToBan._id });
 
-    
+    // Log
     await logEvent({
       category: "ADMIN",
       action: "USER_BAN",
       user: { name: req.user.name, email: req.user.email },
-      meta: { bannedUser: userToBan.email, reason, type: banType }
+      meta: { bannedUser: userToBan.email, reason, type: banType },
     });
 
     res.json({ success: true });
@@ -203,16 +136,17 @@ router.post("/users/:id/ban", async (req, res) => {
 
 router.post("/users/:id/unban", async (req, res) => {
   try {
-    
+    // Find the ban record
     const banRecord = await BannedUser.findById(req.params.id);
-    if (!banRecord) return res.status(404).json({ error: "Ban record not found" });
+    if (!banRecord)
+      return res.status(404).json({ error: "Ban record not found" });
 
-    
-    
-    
-    
-    
-    
+    // Re-create the user if possible
+    // Note: We only have basic info. Google Auth will try to match by googleId or email on next login.
+    // If we want to restore them fully, we'd need to have archived them.
+    // Current logic: Just remove ban record. User has to sign up again (or if they sign in with Google, a new account is made).
+    // Actually, `server.js` logic handles account creation on login.
+    // So unbanning just means removing the block.
 
     await BannedUser.deleteOne({ _id: req.params.id });
 
@@ -220,7 +154,7 @@ router.post("/users/:id/unban", async (req, res) => {
       category: "ADMIN",
       action: "USER_UNBAN",
       user: { name: req.user.name, email: req.user.email },
-      meta: { unbannedUser: banRecord.user?.email }
+      meta: { unbannedUser: banRecord.user?.email },
     });
 
     res.json({ success: true });
@@ -230,9 +164,9 @@ router.post("/users/:id/unban", async (req, res) => {
   }
 });
 
-
-
-
+// ----------------------------------------------------
+// BANNED LIST
+// ----------------------------------------------------
 router.get("/banned", async (req, res) => {
   try {
     const list = await BannedUser.find().sort({ bannedAt: -1 }).lean();
@@ -242,21 +176,9 @@ router.get("/banned", async (req, res) => {
   }
 });
 
-
-
-
-
-
-router.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: "Fetch products failed" });
-  }
-});
-
-// Category Routes
+// ----------------------------------------------------
+// CATEGORIES
+// ----------------------------------------------------
 router.get("/categories", async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -269,16 +191,25 @@ router.get("/categories", async (req, res) => {
 router.post("/categories", async (req, res) => {
   try {
     const { name, description } = req.body;
-    const category = await Category.create({ name, description });
+    if (!name) return res.status(400).json({ error: "Name is required" });
+
+    const category = await Category.create({
+      name,
+      description,
+      slug: name.toLowerCase().replace(/ /g, "-"),
+    });
+
     await logEvent({
       category: "ADMIN",
       action: "CATEGORY_CREATE",
-      user: { email: req.user.email, name: req.user.name },
-      meta: { categoryId: category._id, name: category.name }
+      user: { email: req.user.email },
+      meta: { category: category.name }
     });
+
     res.json(category);
   } catch (err) {
-    res.status(400).json({ error: "Failed to create category (name must be unique)" });
+    console.error(err);
+    res.status(500).json({ error: "Create category failed" });
   }
 });
 
@@ -288,141 +219,69 @@ router.delete("/categories/:id", async (req, res) => {
     await logEvent({
       category: "ADMIN",
       action: "CATEGORY_DELETE",
-      user: { email: req.user.email, name: req.user.name },
-      meta: { categoryId: req.params.id }
+      user: { email: req.user.email },
+      meta: { id: req.params.id }
     });
     res.json({ ok: true });
   } catch (err) {
-    res.status(400).json({ error: "Failed to delete category" });
+    res.status(500).json({ error: "Delete category failed" });
   }
 });
 
+// ----------------------------------------------------
+// PRODUCTS
+// ----------------------------------------------------
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+router.get("/products", async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: "Fetch products failed" });
+  }
 });
 
-
+// Create product (Multiple images)
 router.post(
   "/products",
-  (req, res, next) => {
-    upload.array("images", 5)(req, res, (err) => {
-      if (err) {
-        console.error("🔴 UPLOAD ERROR:", err);
-        
-        if (err instanceof multer.MulterError) {
-          return res.status(400).json({ error: `Upload error: ${err.message}` });
-        }
-        return res.status(500).json({ error: `Cloudinary upload failed: ${err.message}` });
-      }
-      next();
-    });
-  },
+  upload.array("images", 5), // Up to 5 images
   async (req, res) => {
     try {
-      const { name, subtitle, price, tag, category, description, features, isFeatured, inStock, primaryIndex } = req.body;
-      console.log("ADMIN POST /products body:", JSON.stringify(req.body, null, 2));
-      console.log("Description received:", description ? (description.length + " chars") : "MISSING");
+      const { name, subtitle, price, tag, features, inStock, isFeatured, primaryIndex, category } =
+        req.body;
+      console.log(
+        "ADMIN POST /products body:",
+        JSON.stringify(req.body, null, 2)
+      );
+      console.log("ADMIN POST /products inStock value:", inStock);
 
       let featuresArray = [];
       if (typeof features === "string") {
         try {
           featuresArray = JSON.parse(features);
         } catch (e) {
-          featuresArray = features.split("\n").map(s => s.trim()).filter(Boolean);
+          featuresArray = features
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean);
         }
       }
 
-      
-      let uploadedUrls = (req.files || []).map(f => f.path);
+      // Handle images
+      // Newly uploaded files (Cloudinary provides full URL in `path`)
+      const uploadedUrls = (req.files || []).map((f) => f.path);
 
-      
-      if (primaryIndex !== undefined) {
-        const idx = parseInt(primaryIndex);
-        if (idx > 0 && idx < uploadedUrls.length) {
-          const [p] = uploadedUrls.splice(idx, 1);
-          uploadedUrls.unshift(p);
-        }
-      }
+      // Since this is CREATE, there are no existing images to reorder ideally,
+      // but maybe logic allows it? No, just new files.
+      // However, if we want to honor `primaryIndex`, we just reorder the array such that primary is first?
+      // Or we just store them as is. The frontend tries to send everything in order.
+      // Since `upload.array` processes files in order they are sent, `uploadedUrls` matches the order of the 'images' field parts.
+      // But `FormData` order is not guaranteed reliable across all browsers/libs, but usually is.
+      // Let's assume frontend appended them in correct order.
 
       let finalImageUrls = [...uploadedUrls];
 
-      const product = await Product.create({
-        name,
-        subtitle,
-        price,
-        tag,
-        category: category || "Uncategorized",
-        features: featuresArray,
-        description,
-        imageUrls: finalImageUrls,
-        isFeatured: isFeatured === 'true' || isFeatured === true || isFeatured === 'on',
-        inStock: inStock === 'true' || inStock === true || inStock === 'on' || (Array.isArray(inStock) && (inStock.includes('true') || inStock.includes('on')))
-      });
-
-      await logEvent({
-        category: "ADMIN",
-        action: "PRODUCT_CREATE",
-        user: { email: req.user.email, name: req.user.name },
-        meta: { productId: product._id, name: product.name }
-      });
-
-      res.json(product);
-    } catch (err) {
-      console.error("Product creation error:", err);
-      console.error("Error message:", err.message);
-      console.error("Error stack:", err.stack);
-      res.status(400).json({ error: err.message || "Failed to create product" });
-    }
-  }
-);
-
-
-
-router.put(
-  "/products/:id",
-  (req, res, next) => {
-    upload.array("images", 5)(req, res, (err) => {
-      if (err) {
-        console.error("🔴 UPDATE UPLOAD ERROR:", err);
-        if (err instanceof multer.MulterError) {
-          return res.status(400).json({ error: `Upload error: ${err.message}` });
-        }
-        return res.status(500).json({ error: `Cloudinary upload failed: ${err.message}` });
-      }
-      next();
-    });
-  },
-  async (req, res) => {
-    try {
-      const { name, subtitle, price, tag, category, description, features, isFeatured, inStock, existingImageUrls, primaryIndex } = req.body;
-      console.log("ADMIN PUT /products description:", description ? "Present" : "Missing");
-
-      let featuresArray = [];
-      if (typeof features === "string") {
-        try {
-          featuresArray = JSON.parse(features);
-        } catch (e) {
-          featuresArray = features.split("\n").map(s => s.trim()).filter(Boolean);
-        }
-      }
-
-      
-      let currentImages = [];
-      if (existingImageUrls) {
-        if (Array.isArray(existingImageUrls)) currentImages = existingImageUrls;
-        else currentImages = [existingImageUrls];
-      }
-
-      
-      const newUrls = (req.files || []).map(f => f.path);
-
-      
-      let finalImageUrls = [...currentImages, ...newUrls];
-
-      
+      // Handle Primary Index if provided (swap primary to front)
       if (primaryIndex !== undefined) {
         const idx = parseInt(primaryIndex);
         if (idx > 0 && idx < finalImageUrls.length) {
@@ -431,30 +290,158 @@ router.put(
         }
       }
 
-      const updates = {
-        name, subtitle, price, tag,
-        category: category || "Uncategorized",
-        description,
+      const product = await Product.create({
+        name,
+        subtitle,
+        price,
+        tag,
         features: featuresArray,
         imageUrls: finalImageUrls,
-        isFeatured: isFeatured === 'true' || isFeatured === true || isFeatured === 'on',
-        inStock: inStock === 'true' || inStock === true || inStock === 'on' || (Array.isArray(inStock) && (inStock.includes('true') || inStock.includes('on')))
-      };
-
-      const product = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+        inStock:
+          inStock === "true" ||
+          inStock === true ||
+          inStock === "on" ||
+          (Array.isArray(inStock) &&
+            (inStock.includes("true") || inStock.includes("on"))),
+        category: category || null,
+        isFeatured: isFeatured === "true" || isFeatured === true,
+      });
 
       await logEvent({
         category: "ADMIN",
-        action: "PRODUCT_UPDATE",
+        action: "PRODUCT_CREATE",
         user: { email: req.user.email, name: req.user.name },
-        meta: { productId: product?._id, updates }
+        meta: { productId: product._id, name: product.name },
       });
 
       res.json(product);
     } catch (err) {
-      res.status(400).json({ error: "Failed to update product" });
+      console.error(err);
+      res.status(400).json({ error: "Failed to create product" });
     }
-  });
+  }
+);
+
+// Update product
+router.put("/products/:id", upload.array("images", 5), async (req, res) => {
+  try {
+    const {
+      name,
+      subtitle,
+      price,
+      tag,
+      features,
+      inStock,
+      existingImageUrls,
+      primaryIndex,
+      category,
+      isFeatured,
+    } = req.body;
+    console.log(
+      `ADMIN PUT /products/${req.params.id} body:`,
+      JSON.stringify(req.body, null, 2)
+    );
+    console.log(`ADMIN PUT /products/${req.params.id} inStock value:`, inStock);
+
+    let featuresArray = [];
+    if (typeof features === "string") {
+      try {
+        featuresArray = JSON.parse(features);
+      } catch (e) {
+        featuresArray = features
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+
+    // Existing images (from hidden inputs, may be array or single string or undefined)
+    let currentImages = [];
+    if (existingImageUrls) {
+      if (Array.isArray(existingImageUrls)) currentImages = existingImageUrls;
+      else currentImages = [existingImageUrls];
+    }
+
+    // New images
+    const newUrls = (req.files || []).map((f) => f.path);
+
+    // Combine them. The frontend might have sent them in a specific mix, but `multer` separates files from fields.
+    // The frontend logic sends `existingImageUrls` array representing the ones KEPT.
+    // And `files` are the NEW ones.
+    // The frontend logic (Step 314) does:
+    // existingUrls inputs... then file inputs...
+    // BUT `multer` extracts all files into `req.files`.
+    // We need to know where to insert them?
+    // Actually the frontend JS (Step 314) just `append`s files to FormData.
+    // It doesn't seem to interleave them in a way `multer` would easily reconstruct purely by order if mixed.
+    // Wait, the frontend logic `rebuildPreviewArea` (Step 314) creates a visual order, but when submitting:
+    // It appends `existingImageUrls[]` in order.
+    // It appends `images` (files) in order.
+    // So on server: we have `existingImageUrls` array AND `req.files` array.
+    // We generally just concat them: `[...existing, ...new]`.
+    // BUT the user controls the PRIMARY index which is relative to the *combined* list visually?
+    // In the JS `rebuildCombinedOrderAfterMove`, it maintains `existingUrls` and `newFiles` arrays separately!
+    // So `existingUrls` are in their sorted order (relative to each other).
+    // `newFiles` are in their sorted order (relative to each other).
+    // And the JS *DOES NOT* seem to support mixing them fully (e.g. Existing, New, Existing).
+    // Wait, `rebuildCombinedOrderAfterMove` DOES update `existingUrls` and `newFiles` arrays.
+    // If I move a New file before an Existing file?
+    // The JS splits them back:
+    // `existingUrls = combined.filter(c => c.type === 'existing')...`
+    // `newFiles = combined.filter(c => c.type === 'new')...`
+    // So effectively, ALL existing images will always be grouped together? No, wait.
+    // If the JS splits them back into two arrays, then they are de-facto grouped by type when submitted.
+    // `existingImageUrls` sent to server will be all existing ones.
+    // `images` sent to server will be all new ones.
+    // So the server sees: [E1, E2] and [N1, N2].
+    // The final list will be [E1, E2, N1, N2].
+    // The `primaryIndex` tells us which one is the main image.
+    // So we just concat them, then apply primary swap.
+
+    let finalImageUrls = [...currentImages, ...newUrls];
+
+    // Apply primary index swap
+    if (primaryIndex !== undefined) {
+      const idx = parseInt(primaryIndex);
+      if (idx > 0 && idx < finalImageUrls.length) {
+        const [p] = finalImageUrls.splice(idx, 1);
+        finalImageUrls.unshift(p);
+      }
+    }
+
+    const updates = {
+      name,
+      subtitle,
+      price,
+      tag,
+      features: featuresArray,
+      imageUrls: finalImageUrls,
+      inStock:
+        inStock === "true" ||
+        inStock === true ||
+        inStock === "on" ||
+        (Array.isArray(inStock) &&
+          (inStock.includes("true") || inStock.includes("on"))),
+      category: category || null,
+      isFeatured: isFeatured === "true" || isFeatured === true,
+    };
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    });
+
+    await logEvent({
+      category: "ADMIN",
+      action: "PRODUCT_UPDATE",
+      user: { email: req.user.email, name: req.user.name },
+      meta: { productId: product?._id, updates },
+    });
+
+    res.json(product);
+  } catch (err) {
+    res.status(400).json({ error: "Failed to update product" });
+  }
+});
 
 router.delete("/products/:id", async (req, res) => {
   try {
@@ -463,7 +450,7 @@ router.delete("/products/:id", async (req, res) => {
       category: "ADMIN",
       action: "PRODUCT_DELETE",
       user: { email: req.user.email, name: req.user.name },
-      meta: { productId: req.params.id }
+      meta: { productId: req.params.id },
     });
     res.json({ ok: true });
   } catch (err) {
@@ -471,16 +458,15 @@ router.delete("/products/:id", async (req, res) => {
   }
 });
 
-
-
-
-
+// ----------------------------------------------------
+// COMMENTS
+// ----------------------------------------------------
 
 router.get("/comments/unreplied", async (req, res) => {
   try {
-    
-    
-    
+    // "Unreplied" or just recent comments admin needs to see
+    // Let's just return the last 100 comments for now.
+    // Or filters? The frontend says "unreplied" but the implementation is just a list.
     const comments = await Comment.find()
       .sort({ createdAt: -1 })
       .limit(100)
@@ -499,17 +485,17 @@ router.post("/comments/:id/reply", async (req, res) => {
     const reply = await Comment.create({
       product: parent.product,
       user: req.user._id,
-      userName: req.user.name || "Admin", 
+      userName: req.user.name || "Admin", // Admin name
       userPicture: req.user.picture,
       text: req.body.text,
       isAdmin: true,
       isAdminReply: true,
       parentComment: parent._id,
-      
-      parentCommentUserName: parent.userName
+      // store parent username for UI
+      parentCommentUserName: parent.userName,
     });
 
-    
+    // Also notify?
 
     res.json(reply);
   } catch (err) {
@@ -517,10 +503,9 @@ router.post("/comments/:id/reply", async (req, res) => {
   }
 });
 
-
-
-
-
+// ----------------------------------------------------
+// STATISTICS
+// ----------------------------------------------------
 router.get("/statistics", async (req, res) => {
   try {
     const usersCount = await User.countDocuments();
@@ -529,7 +514,9 @@ router.get("/statistics", async (req, res) => {
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentUsers = await User.countDocuments({ createdAt: { $gte: sevenDaysAgo } });
+    const recentUsers = await User.countDocuments({
+      createdAt: { $gte: sevenDaysAgo },
+    });
 
     res.json({ usersCount, productsCount, commentsCount, recentUsers });
   } catch (err) {
@@ -537,68 +524,21 @@ router.get("/statistics", async (req, res) => {
   }
 });
 
-
-
-
-
+// ----------------------------------------------------
+// DEVELOPER
+// ----------------------------------------------------
 router.post("/developer", async (req, res) => {
   try {
     const { webhookUrl, message } = req.body;
-    
+    // Send to discord
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: message })
+      body: JSON.stringify({ content: message }),
     });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to send dev message" });
-  }
-});
-
-// Orders Routes
-router.get("/orders", async (req, res) => {
-  try {
-    const orders = await Order.find().sort({ createdAt: -1 }).limit(50);
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: "Fetch orders failed" });
-  }
-});
-
-router.patch("/orders/:id/status", async (req, res) => {
-  try {
-    const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
-    
-    await logEvent({
-        category: "ADMIN",
-        action: "ORDER_UPDATE",
-        user: { name: req.user.name, email: req.user.email },
-        meta: { orderId: order._id, status }
-    });
-
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: "Update failed" });
-  }
-});
-
-router.delete("/orders/:id", async (req, res) => {
-  try {
-    const order = await Order.findByIdAndDelete(req.params.id);
-    if (!order) return res.status(404).json({ error: "Order not found" });
-
-    await logEvent({
-        category: "ADMIN",
-        action: "ORDER_DELETE",
-        user: { name: req.user.name, email: req.user.email },
-        meta: { orderId: order._id, customer: order.customerName }
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "Delete failed" });
   }
 });
 
