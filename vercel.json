@@ -1,22 +1,38 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "server.js",
-            "use": "@vercel/node"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/uploads/(.*)",
-            "dest": "/uploads/$1"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/server.js"
-        }
-    ],
-    "env": {
-        "NODE_ENV": "production"
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js",
+      "continue": true
+    },
+    {
+      "src": "/auth/(.*)",
+      "dest": "server.js",
+      "continue": true
+    },
+    {
+      "src": "/avatar(.*)",
+      "dest": "server.js",
+      "continue": true
+    },
+    {
+      "src": "/(index|checkout|products|product|contact|login|admin|admin/product-editor|banned)",
+      "dest": "server.js",
+      "continue": true
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
