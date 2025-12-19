@@ -1,27 +1,18 @@
 {
   "version": 2,
-  "functions": {
-    "server.js": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
     }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/auth/(.*)", "destination": "/server.js" },
-    { "source": "/avatar(.*)", "destination": "/server.js" },
-
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/home", "destination": "/public/index.html" },
-
-    { "source": "/products", "destination": "/public/products.html" },
-    { "source": "/product", "destination": "/public/product.html" },
-    { "source": "/contact", "destination": "/public/contact.html" },
-    { "source": "/login", "destination": "/public/login.html" },
-    { "source": "/checkout", "destination": "/public/checkout.html" },
-    { "source": "/admin", "destination": "/public/admin.html" },
-    { "source": "/admin/product-editor", "destination": "/public/admin-product-editor.html" },
-    { "source": "/banned", "destination": "/public/banned.html" },
-
-    { "source": "/(.*)", "destination": "/public/$1" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/server.js" },
+    { "src": "/auth/(.*)", "dest": "/server.js" },
+    { "src": "/avatar(.*)", "dest": "/server.js" }
   ]
 }
