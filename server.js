@@ -1,12 +1,9 @@
+// FULL server.js
+// Express + MongoDB + Sessions + Google OAuth + Admin-by-email
+// Products + Image uploads + Discord logging + Contact + Persistent cart + Comments
+// Ban system + Auto-moderation + IP tracking + Multiple images
 
-// Load .env only in development (Vercel injects env vars directly)
-if (process.env.NODE_ENV !== "production") {
-  try {
-    require("dotenv").config();
-  } catch (err) {
-    console.warn("dotenv not available:", err.message);
-  }
-}
+require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
@@ -16,6 +13,7 @@ const MongoStore = require("connect-mongo");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const multer = require("multer");
 const fs = require("fs");
+const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,61 +21,45 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy so req.ip reflects client IPs behind proxies (Heroku / nginx)
 app.set("trust proxy", true);
 
+// Admin emails from .env (comma separated)
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
+//--------------------------------------------------
+// Ensure uploads folder exists
+//--------------------------------------------------
 const uploadsDir = path.join(__dirname, "uploads");
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-  }
-} catch (err) {
-  console.warn("Could not create uploads directory (expected on some read-only systems):", err.message);
-}
+// Serverless: Don't create uploads folder on the fly since FS is read-only.
+// if (!fs.existsSync(uploadsDir)) {
+//   fs.mkdirSync(uploadsDir);
+// }
 
-if (!process.env.MONGO_URI) {
-  console.error("❌ CRITICAL: MONGO_URI is not defined in environment variables!");
-}
-
-// Use mongoose.connect with better error handling for serverless
-const connectDB = async () => {
-  try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI not defined");
-    }
-    
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000,
-    });
-    
+//--------------------------------------------------
+// MongoDB
+//--------------------------------------------------
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
     console.log("✅ MongoDB connected");
-    
     // Run cleanup once on startup when connection is ready
     if (mongoose.models.BannedUser) {
-      try {
-        const result = await mongoose.models.BannedUser.deleteMany({
-          banType: "temporary",
-          expiresAt: { $lte: new Date() }
-        });
+      mongoose.models.BannedUser.deleteMany({
+        banType: "temporary",
+        expiresAt: { $lte: new Date() }
+      }).then(result => {
         if (result.deletedCount > 0) {
           console.log(`🧹 Cleaned up ${result.deletedCount} expired temporary ban(s) on startup`);
         }
-      } catch (err) {
-        console.error("Failed to cleanup expired bans on startup:", err);
-      }
+      }).catch(err => console.error("Failed to cleanup expired bans on startup:", err));
     }
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err.message);
-    // Don't crash the app, just log the error
-  }
-};
+  })
+  .catch((err) => console.error("Mongo error", err));
 
-// Connect to DB (non-blocking)
-connectDB();
-
+//--------------------------------------------------
+// Schemas & Models
+//--------------------------------------------------
 const UserSchema = new mongoose.Schema({
   googleId: String,
   name: String,
@@ -94,17 +76,22 @@ const UserSchema = new mongoose.Schema({
   ],
 }, { timestamps: true });
 
+const CategorySchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  description: String,
+  slug: String,
+}, { timestamps: true });
+
 const ProductSchema = new mongoose.Schema({
   name: String,
   subtitle: String,
   price: Number,
   tag: String,
+  category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // Link to category
   imageUrls: [String],
-  category: { type: String, default: "Uncategorized" },
-  description: String,
-  isFeatured: { type: Boolean, default: false },
   features: [String],
   inStock: { type: Boolean, default: true },
+  isFeatured: { type: Boolean, default: false },
 });
 
 const CommentSchema = new mongoose.Schema({
@@ -119,11 +106,52 @@ const CommentSchema = new mongoose.Schema({
   isAdminReply: { type: Boolean, default: false }, // admin reply to a specific comment
 });
 
-const User = mongoose.model("User", UserSchema);
-const Product = mongoose.model("Product", ProductSchema);
-const Comment = mongoose.model("Comment", CommentSchema);
+const CheckoutTokenSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  token: { type: String, required: true },
+  used: { type: Boolean, default: false },
+  expiresAt: { type: Date, required: true },
+});
 
+const OrderSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  items: [
+    {
+      product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      quantity: Number,
+      name: String,
+      price: Number,
+    }
+  ],
+  total: Number,
+  fullName: String,
+  address: String,
+  phone: String,
+  postalCode: String,
+  dob: Date,
+  province: String,
+  status: { type: String, default: "Pending" }, // Pending, Confirmed, Shipped, Delivered, Cancelled
+}, { timestamps: true });
+
+const AnnouncementSchema = new mongoose.Schema({
+  message: { type: String, required: true },
+  title: { type: String, default: "Announcement" },
+  type: { type: String, default: "info" }, // info, warning, success, alert
+  isActive: { type: Boolean, default: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+}, { timestamps: true });
+
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
+const Category = mongoose.models.Category || mongoose.model("Category", CategorySchema);
+const Product = mongoose.models.Product || mongoose.model("Product", ProductSchema);
+const Comment = mongoose.models.Comment || mongoose.model("Comment", CommentSchema);
+const CheckoutToken = mongoose.models.CheckoutToken || mongoose.model("CheckoutToken", CheckoutTokenSchema);
+const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
+const Announcement = mongoose.models.Announcement || mongoose.model("Announcement", AnnouncementSchema);
+
+// -------------------------------------------------
 // Load admin-related models (only BannedUser needed now)
+// -------------------------------------------------
 // require the models so they register with mongoose
 // (this file should exist: ./models/BannedUser.js)
 try {
@@ -142,126 +170,84 @@ try {
   BannedUserModel = null;
 }
 
-// Load Category model
-try {
-  require("./models/Category");
-} catch (e) {
-  console.warn("Category model failed to load", e);
-}
-
-// Load Order model
-try {
-  require("./models/Order");
-} catch (e) {
-  console.warn("Order model failed to load", e);
-}
-
-// Session configuration with safe MongoStore initialization
-try {
-  const sessionConfig = {
+//--------------------------------------------------
+// Sessions
+//--------------------------------------------------
+app.use(
+  session({
     secret: process.env.SESSION_SECRET || "change-me",
     resave: false,
     saveUninitialized: false,
-  };
-  
-  // Only add MongoStore if MONGO_URI is available
-  if (process.env.MONGO_URI) {
-    try {
-      sessionConfig.store = MongoStore.create({ 
-        mongoUrl: process.env.MONGO_URI,
-        touchAfter: 24 * 3600 // lazy session update
-      });
-    } catch (storeErr) {
-      console.warn("MongoStore creation failed, using memory store:", storeErr.message);
-    }
-  }
-  
-  app.use(session(sessionConfig));
-} catch (sessionErr) {
-  console.error("Session middleware failed:", sessionErr);
-  // Use basic session without store as fallback
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "change-me",
-    resave: false,
-    saveUninitialized: false,
-  }));
-}
+    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+  })
+);
 
-// Passport configuration with error handling
-try {
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    passport.use(
-      new GoogleStrategy(
-        {
-          clientID: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CALLBACK_SECRET || process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.GOOGLE_CALLBACK_URL,
-        },
-        async (accessToken, refreshToken, profile, done) => {
-          try {
-            const email = profile.emails && profile.emails[0].value;
-            const photo = profile.photos && profile.photos[0]?.value;
-            const adminEmailsLower = ADMIN_EMAILS.map(e => e.toLowerCase());
-            const isEnvAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
-
-            let user = await User.findOne({ googleId: profile.id });
-
-            if (!user) {
-              user = await User.create({
-                googleId: profile.id,
-                name: profile.displayName,
-                email,
-                picture: photo || "",
-                isAdmin: isEnvAdmin,
-              });
-            } else {
-              user.name = profile.displayName || user.name;
-              user.email = email || user.email;
-              if (photo) user.picture = photo;
-              
-              // Only force true if they are in the ENV list. 
-              // Otherwise, respect the existing DB value (allows manual promotion).
-              if (isEnvAdmin) {
-                user.isAdmin = true;
-              }
-              
-              await user.save();
-            }
-
-            done(null, user);
-          } catch (err) {
-            done(err, null);
-          }
-        }
-      )
-    );
-
-    passport.serializeUser((user, done) => done(null, user.id));
-
-    passport.deserializeUser(async (id, done) => {
+//--------------------------------------------------
+// Passport Google OAuth
+//--------------------------------------------------
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CALLBACK_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
       try {
-        const user = await User.findById(id);
+        const email = profile.emails && profile.emails[0].value;
+        const photo = profile.photos && profile.photos[0]?.value;
+        const adminEmailsLower = ADMIN_EMAILS.map(e => e.toLowerCase());
+        const isAdmin = email ? adminEmailsLower.includes(email.toLowerCase()) : false;
+
+        let user = await User.findOne({ googleId: profile.id });
+
+        if (!user) {
+          user = await User.create({
+            googleId: profile.id,
+            name: profile.displayName,
+            email,
+            picture: photo || "",
+            isAdmin,
+          });
+        } else {
+          user.name = profile.displayName || user.name;
+          user.email = email || user.email;
+          if (photo) user.picture = photo;
+          user.isAdmin = isAdmin;
+          await user.save();
+        }
+
         done(null, user);
       } catch (err) {
         done(err, null);
       }
-    });
+    }
+  )
+);
 
-    app.use(passport.initialize());
-    app.use(passport.session());
-  } else {
-    console.warn("Google OAuth credentials not found, authentication disabled");
+passport.serializeUser((user, done) => done(null, user.id));
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
   }
-} catch (passportErr) {
-  console.error("Passport initialization failed:", passportErr);
-}
+});
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+//--------------------------------------------------
+// Body parsers (MUST be before routes that need them)
+//--------------------------------------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
-
+//--------------------------------------------------
+// Admin email check middleware (after auth, before routes)
+//--------------------------------------------------
 app.use((req, res, next) => {
   if (req.user && req.user.email) {
     const userEmail = String(req.user.email).trim().toLowerCase();
@@ -272,8 +258,39 @@ app.use((req, res, next) => {
   }
   next();
 });
+//--------------------------------------------------
+// Visitor Logger Middleware
+//--------------------------------------------------
+app.use(async (req, res, next) => {
+  try {
+    // Only log main page visits (not images, js, css, or small api calls)
+    const trackedPaths = ["/", "/home", "/products", "/product", "/contact", "/checkout"];
+    const isMainPath = trackedPaths.some(p => req.path === p || (p !== "/" && req.path.startsWith(p)));
 
+    if (isMainPath && process.env.DISCORD_WEBHOOK_URL) {
+      const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const userAgent = req.get('User-Agent') || 'Unknown';
+      const user = req.user ? `${req.user.name} (${req.user.email})` : 'Guest';
+      
+      // Log to Discord (MAC ID is not accessible via HTTP/Internet)
+      logEvent("New Visitor Detected", {
+        path: req.path,
+        user: user,
+        ip: ip,
+        userAgent: userAgent,
+        method: req.method,
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (err) {
+    console.error("Visitor logging error:", err);
+  }
+  next();
+});
 
+//--------------------------------------------------
+// Check banned users middleware (after authentication)
+//--------------------------------------------------
 const banAndSessionMiddleware = async (req, res, next) => {
   // Allow access to banned page, logout, auth routes, and ban-info API
   if (
@@ -342,6 +359,9 @@ app.use('/admin', banAndSessionMiddleware);
 
 
 
+//--------------------------------------------------
+// Auth helper middleware
+//--------------------------------------------------
 function requireUser(req, res, next) {
   if (!req.user) return res.status(401).json({ error: "Not logged in" });
   next();
@@ -362,6 +382,13 @@ function requireAdmin(req, res, next) {
 
 
 
+//--------------------------------------------------
+// Note: IP-block middleware removed as requested
+//--------------------------------------------------
+
+//--------------------------------------------------
+// Auth routes
+//--------------------------------------------------
 app.get(
   "/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
@@ -453,6 +480,9 @@ app.get("/auth/logout", (req, res) => {
   });
 });
 
+//--------------------------------------------------
+// Ban info endpoint (for banned page)
+//--------------------------------------------------
 app.get("/api/ban-info", async (req, res) => {
   try {
     let banInfo = { isBanned: false, reason: null, bannedAt: null, expiresAt: null, banType: null };
@@ -547,6 +577,9 @@ app.get("/api/ban-info", async (req, res) => {
   }
 });
 
+//--------------------------------------------------
+// Ban appeal endpoint
+//--------------------------------------------------
 app.post("/api/ban-appeal", async (req, res) => {
   try {
     const { email, message } = req.body;
@@ -592,6 +625,9 @@ app.post("/api/ban-appeal", async (req, res) => {
   }
 });
 
+//--------------------------------------------------
+// Banned route - only accessible to banned users
+// Supports both /banned and /banned.html for backwards compatibility
 app.get("/banned", async (req, res) => {
   // Get email to check - from logged in user or from session (for banned users who were logged out)
   let emailToCheck = null;
@@ -704,6 +740,9 @@ app.get(["/admin"], (req, res) => {
 
 
 
+// Common page routes (without .html extension)
+// Supports both clean URLs and .html for backwards compatibility
+//--------------------------------------------------
 app.get(["/login"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "login.html"));
 });
@@ -712,24 +751,17 @@ app.get(["/contact"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "contact.html"));
 });
 
-app.get(["/product"], (req, res) => {
-  return res.sendFile(path.join(__dirname, "public", "product.html"));
-});
-
 app.get(["/products"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "products.html"));
 });
 
-app.get(["/checkout"], (req, res) => {
-  const token = req.query.q;
-  if (!token || !req.session.checkoutToken || token !== req.session.checkoutToken) {
-    // Show 404 if token is invalid or missing
-    const path = require("path");
-    return res.status(404).sendFile(path.join(__dirname, "public", "404.html"));
-  }
-  return res.sendFile(path.join(__dirname, "public", "checkout.html"));
+app.get(["/product"], (req, res) => {
+  return res.sendFile(path.join(__dirname, "public", "product.html"));
 });
 
+//--------------------------------------------------
+// Mount admin router (requires routes/adminRoutes.js present)
+//--------------------------------------------------
 try {
   const adminRoutes = require("./routes/adminRoutes");
   app.use("/api/admin", adminRoutes);
@@ -737,6 +769,9 @@ try {
   console.warn("Warning: admin routes not mounted (./routes/adminRoutes.js missing or error).", e.message || e);
 }
 
+//--------------------------------------------------
+// Protect admin.html (404 for non-admins)
+//--------------------------------------------------
 app.get("/admin.html", (req, res) => {
   if (!req.user || !req.user.isAdmin) {
     return res
@@ -747,8 +782,22 @@ app.get("/admin.html", (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-app.use("/uploads", express.static(uploadsDir));
+//--------------------------------------------------
+// Body parsers
+//--------------------------------------------------
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+//--------------------------------------------------
+// Static
+//--------------------------------------------------
+app.use("/uploads", express.static(uploadsDir));
+app.use(express.static(path.join(__dirname, "public")));
+
+//--------------------------------------------------
+// Multer for image upload (Unused in server.js - moved to adminRoutes with Cloudinary)
+//--------------------------------------------------
+/*
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -769,7 +818,11 @@ const upload = multer({
     cb(null, true);
   },
 });
+*/
 
+//--------------------------------------------------
+// Discord logging (uses global fetch in Node 20+)
+//--------------------------------------------------
 async function logEvent(title, payload) {
   try {
     if (!process.env.DISCORD_WEBHOOK_URL) return;
@@ -781,27 +834,33 @@ async function logEvent(title, payload) {
       JSON.stringify(payload, null, 2) +
       "\n```";
 
-    await fetch(process.env.DISCORD_WEBHOOK_URL, {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+    const response = await fetch(process.env.DISCORD_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: msg }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      console.warn(`Discord log returned status ${response.status}`);
+    }
   } catch (err) {
-    console.error("Discord log failed", err);
+    if (err.name === 'AbortError') {
+      console.error("Discord log failed: Connection timed out after 8s");
+    } else {
+      console.error("Discord log failed:", err.message);
+    }
   }
 }
 
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({ 
-    status: "ok", 
-    timestamp: new Date().toISOString(),
-    mongoConnected: mongoose.connection.readyState === 1,
-    env: process.env.NODE_ENV || "development"
-  });
-});
-
-// User info endpoint
+//--------------------------------------------------
+// /api/me  (user info for frontend)
+//--------------------------------------------------
 app.get("/api/me", (req, res) => {
   if (!req.user) return res.json({ loggedIn: false });
 
@@ -811,6 +870,10 @@ app.get("/api/me", (req, res) => {
     user: { name, email, isAdmin, picture },
   });
 });
+
+//--------------------------------------------------
+// Avatar routes
+//--------------------------------------------------
 
 // Avatar for current logged-in user (navbar)
 app.get("/avatar", async (req, res) => {
@@ -872,12 +935,11 @@ app.get("/api/products", async (req, res) => {
 
 app.get("/api/categories", async (req, res) => {
   try {
-    // If you need Category model, ensure it's loaded (it was loaded earlier in conditional block)
     const Category = mongoose.model("Category");
     const categories = await Category.find().sort({ name: 1 });
     res.json(categories);
   } catch (err) {
-    res.status(500).json({ error: "Fetch categories failed" });
+    res.status(500).json({ error: "Failed to fetch categories" });
   }
 });
 
@@ -955,6 +1017,7 @@ app.get("/api/products/:id/comments", async (req, res) => {
   }
 });
 
+// Add comment with 48h cooldown per product per user
 app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   try {
     const { text, parentCommentId } = req.body;
@@ -1112,6 +1175,7 @@ app.post("/api/products/:id/comments", requireUser, async (req, res) => {
   }
 });
 
+// Delete comment (admin or author)
 app.delete(
   "/api/products/:productId/comments/:commentId",
   requireUser,
@@ -1154,6 +1218,9 @@ app.delete(
   }
 );
 
+//--------------------------------------------------
+// Persistent cart
+//--------------------------------------------------
 app.get("/api/cart", requireUser, async (req, res) => {
   const cart = req.user.cart || [];
   const items = cart.map((c) => ({
@@ -1161,6 +1228,24 @@ app.get("/api/cart", requireUser, async (req, res) => {
     quantity: c.quantity,
   }));
   res.json(items);
+});
+
+app.get("/api/checkout/summary", requireUser, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate("cart.product");
+    const items = user.cart
+      .filter((c) => c.product)
+      .map((c) => ({
+        name: c.product.name,
+        price: c.product.price,
+        quantity: c.quantity,
+        image: c.product.imageUrls?.[0] || "",
+      }));
+    const total = items.reduce((acc, it) => acc + it.price * it.quantity, 0);
+    res.json({ items, total });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load summary" });
+  }
 });
 
 app.post("/api/cart", requireUser, async (req, res) => {
@@ -1200,6 +1285,9 @@ app.delete("/api/cart", requireUser, async (req, res) => {
   }
 });
 
+//--------------------------------------------------
+// Contact -> Discord
+//--------------------------------------------------
 app.post("/api/contact", async (req, res) => {
   const { name, email, phone, subject, message } = req.body || {};
 
@@ -1235,120 +1323,217 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-// Generate checkout session token
-app.get("/api/checkout-session", requireUser, (req, res) => {
-  const crypto = require("crypto");
-  const token = crypto.randomBytes(16).toString("hex");
-  req.session.checkoutToken = token;
-  res.json({ token });
+//--------------------------------------------------
+// Checkout System
+//--------------------------------------------------
+
+// Generate one-time checkout token
+// Serve checkout page
+app.get("/checkout", requireUser, async (req, res) => {
+  if (!req.user.cart || req.user.cart.length === 0) {
+    return res.redirect("/");
+  }
+  res.sendFile(path.join(__dirname, "public", "checkout.html"));
 });
 
-// Rate Limiter for Orders
-const orderCooldowns = new Map();
-
-app.post("/api/orders", requireUser, async (req, res) => {
+// Submit checkout form
+app.post("/api/checkout/submit", requireUser, async (req, res) => {
   try {
-    const { 
-      fullName, phone, dob, address, postalCode, province, checkoutToken, recaptchaResponse 
-    } = req.body;
+    const { fullName, address, phone, postalCode, dob, province, agree } = req.body;
+    
+    if (!agree) return res.status(400).json({ error: "You must agree to the terms" });
 
-    // Verify token
-    if (!checkoutToken || !req.session.checkoutToken || checkoutToken !== req.session.checkoutToken) {
-        return res.status(403).json({ error: "Invalid or expired checkout session." });
-    }
-
-    // 1. CAPTCHA Validation
-    if (!recaptchaResponse) {
-        return res.status(400).json({ error: "CAPTCHA verification failed. Please try again." });
-    }
-
-    try {
-        const axios = require("axios");
-        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY || "6LeIxAcTAAAAAGG-v3_m9oG774W4_H0O4block"; // Placeholder
-        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecret}&response=${recaptchaResponse}`;
-        
-        const response = await axios.post(verifyUrl);
-        if (!response.data.success) {
-            console.error("reCAPTCHA Verification Failed:", response.data["error-codes"]);
-            return res.status(400).json({ error: "CAPTCHA verification failed. Please try again." });
-        }
-    } catch (error) {
-        console.error("reCAPTCHA Error:", error);
-        return res.status(500).json({ error: "Failed to verify CAPTCHA. Please try again later." });
-    }
-    // 2. Cooldown (1 order per 2 minutes per user)
-    const userId = req.user._id.toString();
-    const now = Date.now();
-    if (orderCooldowns.has(userId)) {
-      const lastTime = orderCooldowns.get(userId);
-      if (now - lastTime < 120000) { // 2 mins
-        return res.status(429).json({ error: "Please wait a few minutes before placing another order." });
+    // DOB Validation (Min 16 years)
+    if (dob) {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      if (age < 16) {
+        return res.status(400).json({ error: "You must be at least 16 years old to place a request." });
       }
     }
 
-    // 3. Get Cart
-    const cart = req.user.cart;
-    if (!cart || cart.length === 0) {
-      return res.status(400).json({ error: "Cart is empty" });
-    }
-
-    // 4. Calculate Total & Create Items
-    let total = 0;
-    const items = [];
-    
-    // Populate product details
-    await req.user.populate("cart.product");
-    
-    for (const item of req.user.cart) {
-      if (!item.product) continue;
-      items.push({
-        product: item.product._id,
-        name: item.product.name,
-        price: item.product.price,
-        quantity: item.quantity
-      });
-      total += item.product.price * item.quantity;
-    }
-
-    // 5. Create Order
-    const Order = mongoose.model("Order");
-    const newOrder = await Order.create({
-      user: userId,
-      customerName: fullName,
-      customerEmail: req.user.email,
-      customerPhone: phone,
-      customerDOB: dob,
-      customerAddress: address,
-      customerPostal: postalCode,
-      customerProvince: province,
-      items,
-      totalAmount: total,
-      status: "pending"
+    // Check for existing orders (Limit 1 order per user unless cancelled)
+    const existingOrder = await Order.findOne({ 
+      user: req.user._id, 
+      status: { $ne: "Cancelled" } 
     });
 
-    // 6. Clear Cart & Token
+    if (existingOrder) {
+      return res.status(400).json({ 
+        error: "You already have an active or completed order. You can only place a new request if your previous one was cancelled." 
+      });
+    }
+
+    // Phone validation (9 digits)
+    if (!/^\d{9}$/.test(phone)) {
+      return res.status(400).json({ error: "Phone number must be 9 digits (excluding leading 0)" });
+    }
+
+    // Address verification (Simple heuristic check)
+    if (!address || address.length < 10) {
+      return res.status(400).json({ error: "Please provide a valid full address" });
+    }
+    
+    // Check for some common address parts (Street/Lane/Road/No/City)
+    const lowerAddr = address.toLowerCase();
+    const hasRoad = lowerAddr.includes("road") || lowerAddr.includes("rd") || lowerAddr.includes("lane") || lowerAddr.includes("st") || lowerAddr.includes("street");
+    const hasCity = lowerAddr.length > 15; // Rough heuristic
+
+    if (!hasRoad && !hasCity) {
+       return res.status(400).json({ error: "Address seems incomplete. Please provide a real address." });
+    }
+
+    // Fetch product details for the order
+    const populatedUser = await User.findById(req.user._id).populate("cart.product");
+    
+    if (!populatedUser || !populatedUser.cart) {
+        return res.status(400).json({ error: "Could not find user cart" });
+    }
+
+    const finalItems = populatedUser.cart
+      .filter(c => c.product) // Safety check: if product was deleted
+      .map(c => ({
+        product: c.product._id,
+        quantity: c.quantity,
+        name: c.product.name,
+        price: c.product.price
+      }));
+    
+    if (finalItems.length === 0) return res.status(400).json({ error: "Cart is empty or items unavailable" });
+
+    const total = finalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    
+    const order = await Order.create({
+      user: req.user._id,
+      items: finalItems,
+      total,
+      fullName,
+      address,
+      phone: "+94" + phone,
+      postalCode,
+      dob,
+      province,
+      status: "Pending"
+    });
+    
+    // Clear cart
     req.user.cart = [];
     await req.user.save();
-    delete req.session.checkoutToken;
     
-    // 7. Set Cooldown
-    orderCooldowns.set(userId, now);
-
-    // 8. Log
-    await logEvent("ORDER_create", {
-      user: req.user.email,
-      orderId: newOrder._id,
-      amount: total
-    });
-
-    res.json({ success: true, orderId: newOrder._id });
-
+    await logEvent("ORDER_CREATED", { orderId: order._id, user: req.user.email, total });
+    
+    res.json({ ok: true });
   } catch (err) {
-    console.error("Order creation failed", err);
-    res.status(500).json({ error: "Failed to place order." });
+    console.error("Checkout submit error", err);
+    res.status(500).json({ error: "Failed to process order" });
   }
 });
 
+// Admin: Get all orders
+app.get("/api/admin/orders", requireAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 }).populate("user", "name email");
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+// Admin: Update order status
+app.put("/api/admin/orders/:id", requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    await logEvent("ORDER_UPDATE", { orderId: order._id, status, admin: req.user.email });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update order" });
+  }
+});
+
+// Admin: Delete order
+app.delete("/api/admin/orders/:id", requireAdmin, async (req, res) => {
+  try {
+    await Order.findByIdAndDelete(req.params.id);
+    await logEvent("ORDER_DELETE", { orderId: req.params.id, admin: req.user.email });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete order" });
+  }
+});
+
+//--------------------------------------------------
+// Announcements
+//--------------------------------------------------
+
+// Announcements Public
+app.get("/api/announcements/active", async (req, res) => {
+  try {
+    const announcements = await Announcement.find({ isActive: true }).sort({ createdAt: -1 });
+    res.json(announcements);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch announcements" });
+  }
+});
+
+// Announcements Admin
+app.get("/api/admin/announcements", requireAdmin, async (req, res) => {
+  try {
+    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    res.json(announcements);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch announcements" });
+  }
+});
+
+app.post("/api/admin/announcements", requireAdmin, async (req, res) => {
+  try {
+    const { message, title, type, isActive } = req.body;
+    const ann = await Announcement.create({
+      message,
+      title,
+      type,
+      isActive,
+      createdBy: req.user._id
+    });
+    res.json(ann);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create announcement" });
+  }
+});
+
+app.put("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+  try {
+    const { message, title, type, isActive } = req.body;
+    const ann = await Announcement.findByIdAndUpdate(req.params.id, {
+      message,
+      title,
+      type,
+      isActive
+    }, { new: true });
+    res.json(ann);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update announcement" });
+  }
+});
+
+app.delete("/api/admin/announcements/:id", requireAdmin, async (req, res) => {
+  try {
+    await Announcement.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete announcement" });
+  }
+});
+
+//--------------------------------------------------
+// Static files (must be after all routes, before 404 catchall)
+//--------------------------------------------------
 app.use("/uploads", express.static(uploadsDir));
 
 // Security: block direct access to .html files (serve pages only via clean routes)
@@ -1366,12 +1551,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Provide a clean /home route to serve the index page
 app.get(["/home"], (req, res) => {
   return res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.use(express.static(path.join(__dirname, "public")));
 
+//--------------------------------------------------
+// Fallback -> 404 for non-existent pages
+//--------------------------------------------------
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "Not found" });
@@ -1382,6 +1571,9 @@ app.get("*", (req, res) => {
     .sendFile(path.join(__dirname, "public", "404.html"));
 });
 
+//--------------------------------------------------
+// Cleanup expired temporary bans (runs every hour)
+//--------------------------------------------------
 if (BannedUserModel) {
   setInterval(async () => {
     try {
@@ -1399,7 +1591,13 @@ if (BannedUserModel) {
 }
 
 
-if (process.env.NODE_ENV !== "production") {
+// The previous automatic anonymization job was removed per user request.
+
+
+//--------------------------------------------------
+// Start server
+//--------------------------------------------------
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });
