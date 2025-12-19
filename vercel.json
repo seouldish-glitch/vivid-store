@@ -9,30 +9,15 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server.js",
-      "continue": true
+      "dest": "/server.js"
     },
     {
       "src": "/auth/(.*)",
-      "dest": "server.js",
-      "continue": true
-    },
-    {
-      "src": "/avatar(.*)",
-      "dest": "server.js",
-      "continue": true
-    },
-    {
-      "src": "/(index|checkout|products|product|contact|login|admin|admin/product-editor|banned)",
-      "dest": "server.js",
-      "continue": true
+      "dest": "/server.js"
     },
     {
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
