@@ -39,19 +39,23 @@ if (!process.env.MONGODB_URI) {
 // MongoDB Connection with better error handling
 let mongooseConnected = false;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-    mongooseConnected = true;
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
-    // Don't exit in serverless - let app handle requests with error responses
-    if (!process.env.VERCEL) {
-      process.exit(1);
-    }
-  });
+if (process.env.MONGODB_URI) {
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log("✅ MongoDB connected");
+      mongooseConnected = true;
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection error:", err.message);
+      // Don't exit in serverless - let app handle requests with error responses
+      if (!process.env.VERCEL) {
+        process.exit(1);
+      }
+    });
+} else {
+  console.log("⚠️ Skipping MongoDB connection: MONGODB_URI not set");
+}
 
 // Import models (register them with Mongoose)
 try {
@@ -93,10 +97,17 @@ const sessionConfig = {
 
 // Add MongoDB session store
 if (process.env.MONGODB_URI) {
-  sessionConfig.store = MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    touchAfter: 24 * 3600, // lazy session update
-  });
+  try {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      touchAfter: 24 * 3600, // lazy session update
+    });
+    console.log("✅ MongoStore configured");
+  } catch (err) {
+    console.warn("⚠️ Failed to initialize MongoStore:", err.message);
+  }
+} else {
+  console.log("⚠️ Using memory store for sessions (No MONGODB_URI)");
 }
 
 app.use(session(sessionConfig));
