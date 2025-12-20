@@ -1,4 +1,6 @@
+// Load environment variables
 require("dotenv").config();
+
 const express = require("express");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
@@ -8,33 +10,69 @@ const path = require("path");
 
 const app = express();
 
+console.log("🚀 Starting Vivid Vision API...");
+console.log("Environment:", process.env.NODE_ENV || "development");
+console.log("Vercel:", process.env.VERCEL ? "Yes" : "No");
+
 // Check for required environment variables
 if (!process.env.MONGODB_URI) {
-  console.error("❌ ERROR: MONGODB_URI environment variable is required!");
-  console.error("Please create a .env file with your MongoDB connection string.");
-  console.error("See .env.example for reference.");
-  process.exit(1);
+  const errorMsg = "❌ ERROR: MONGODB_URI environment variable is required!";
+  console.error(errorMsg);
+  console.error("Available env vars:", Object.keys(process.env).filter(k => !k.includes('SECRET')).join(', '));
+  
+  // In serverless, we can't exit - send error response instead
+  if (process.env.VERCEL) {
+    app.use((req, res) => {
+      res.status(500).json({
+        error: "Server Configuration Error",
+        message: "Missing required environment variables. Please configure MONGODB_URI in Vercel dashboard.",
+        hint: "Go to Project Settings → Environment Variables"
+      });
+    });
+    module.exports = app;
+  } else {
+    process.exit(1);
+  }
 }
 
-// MongoDB Connection
+
+// MongoDB Connection with better error handling
+let mongooseConnected = false;
+
 mongoose
   .connect(process.env.MONGODB_URI)
-  .then(() => console.log("✅ MongoDB connected"))
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    mongooseConnected = true;
+  })
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
-    process.exit(1);
+    console.error("❌ MongoDB connection error:", err.message);
+    // Don't exit in serverless - let app handle requests with error responses
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   });
 
 // Import models (register them with Mongoose)
-require("../models/User");
-require("../models/Product");
-require("../models/Category");
-require("../models/Comment");
-require("../models/BannedUser");
+try {
+  require("../models/User");
+  require("../models/Product");
+  require("../models/Category");
+  require("../models/Comment");
+  require("../models/BannedUser");
+  console.log("✅ Models loaded");
+} catch (err) {
+  console.error("❌ Error loading models:", err.message);
+}
 
 // Passport Configuration
-const configurePassport = require("../config/passport");
-configurePassport();
+try {
+  const configurePassport = require("../config/passport");
+  configurePassport();
+  console.log("✅ Passport configured");
+} catch (err) {
+  console.error("❌ Error configuring passport:", err.message);
+}
 
 // Middleware
 app.use(express.json());
@@ -70,14 +108,21 @@ app.use(passport.session());
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, "../public")));
 
-// API Routes
-const authRoutes = require("../routes/authRoutes");
-const productRoutes = require("../routes/productRoutes");
-const adminRoutes = require("../routes/adminRoutes");
 
-app.use("/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/admin", adminRoutes);
+// API Routes
+try {
+  const authRoutes = require("../routes/authRoutes");
+  const productRoutes = require("../routes/productRoutes");
+  const adminRoutes = require("../routes/adminRoutes");
+
+  app.use("/auth", authRoutes);
+  app.use("/api/products", productRoutes);
+  app.use("/api/admin", adminRoutes);
+  console.log("✅ Routes loaded");
+} catch (err) {
+  console.error("❌ Error loading routes:", err.message);
+  console.error(err.stack);
+}
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -136,6 +181,9 @@ app.use((err, req, res, next) => {
 
 // Export the Express app for Vercel
 module.exports = app;
+
+console.log("✅ Vivid Vision API initialized successfully");
+console.log("Ready to handle requests");
 
 // Only start the server if not in Vercel environment
 if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
