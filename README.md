@@ -1,113 +1,296 @@
-# Vivid Vision - E-commerce Platform
+# 🎨 Vivid Store - E-commerce Platform
 
-A modern, feature-rich e-commerce platform built with Node.js, Express, and MongoDB.
+A modern, feature-rich e-commerce platform built with Express.js, MongoDB, and Google OAuth authentication. Designed for seamless deployment to Vercel.
 
-## Features
+## ✨ Features
 
-- 🛍️ Product catalog with image carousel
-- 🔐 Google OAuth authentication
-- 👤 User profiles and cart management
-- 💬 Product comments and reviews
-- 🎨 Beautiful dark theme UI with animations
-- 📱 Fully responsive design
-- 🔧 Admin panel for product management
-- 🖼️ Automatic image optimization (1200×900px)
-- 📊 Statistics and analytics
-- 🚫 Comment moderation system
+- **🔐 Google OAuth Authentication** - Secure login with Google accounts
+- **🛍️ Product Management** - Full CRUD operations for products with multiple images
+- **📸 Cloudinary Integration** - Cloud-based image storage and optimization
+- **👥 User Management** - Admin panel for managing users and bans
+- **💬 Comments System** - Product reviews with admin replies
+- **📊 Admin Dashboard** - Statistics, analytics, and management tools
+- **🎯 Categories** - Organize products by category
+- **⭐ Featured Products** - Highlight special products
+- **📱 Responsive Design** - Works on all devices
 
-## Tech Stack
-
-- **Backend**: Node.js, Express
-- **Database**: MongoDB with Mongoose
-- **Authentication**: Passport.js (Google OAuth)
-- **File Upload**: Multer
-- **Session Management**: Express-session with MongoDB store
-- **Frontend**: Vanilla JavaScript, CSS3
-
-## Local Development
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- Google OAuth credentials
+
+- Node.js >= 18.x
+- MongoDB Atlas account (or local MongoDB)
+- Google Cloud Console account (for OAuth)
+- Cloudinary account (for image uploads)
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository**
+
+   ```bash
+   cd c:\Users\Dell\Downloads\vivid-store-main\vivid-store-main
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+
+   Copy `.env.example` to `.env`:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Fill in your environment variables in `.env`:
+
+   ```env
+   MONGODB_URI=your_mongodb_connection_string
+   SESSION_SECRET=your_random_secret_string
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
+   ADMIN_EMAILS=your-email@gmail.com
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+   ```
+
+4. **Run development server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Visit http://localhost:3000
+
+## 📁 Project Structure
+
+```
+vivid-store-main/
+├── api/
+│   └── index.js           # Main serverless function entry point
+├── config/
+│   └── passport.js        # Passport OAuth configuration
+├── models/
+│   ├── User.js           # User model
+│   ├── Product.js        # Product model
+│   ├── Category.js       # Category model
+│   ├── Comment.js        # Comment model
+│   └── BannedUser.js     # Banned user model
+├── routes/
+│   ├── authRoutes.js     # Authentication routes
+│   ├── productRoutes.js  # Product API routes
+│   ├── adminRoutes.js    # Admin panel routes
+│   └── _middleware.js    # Auth middleware
+├── public/
+│   ├── index.html        # Homepage
+│   ├── products.html     # Products page
+│   ├── product.html      # Single product page
+│   ├── admin.html        # Admin panel
+│   └── ...               # Other static files
+├── utils/
+│   └── discordLogger.js  # Discord webhook logger
+├── .env.example          # Environment variables template
+├── vercel.json           # Vercel configuration
+└── package.json          # Dependencies and scripts
+```
+
+## 🔧 Environment Variables
+
+### Required Variables
+
+| Variable               | Description                   | Example                                          |
+| ---------------------- | ----------------------------- | ------------------------------------------------ |
+| `MONGODB_URI`          | MongoDB connection string     | `mongodb+srv://user:pass@cluster.mongodb.net/db` |
+| `SESSION_SECRET`       | Secret for session encryption | `random-32-character-string`                     |
+| `GOOGLE_CLIENT_ID`     | Google OAuth client ID        | `123456789-abc.apps.googleusercontent.com`       |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret    | `GOCSPX-abc123def456`                            |
+| `GOOGLE_CALLBACK_URL`  | OAuth callback URL            | `http://localhost:3000/auth/google/callback`     |
+| `ADMIN_EMAILS`         | Comma-separated admin emails  | `admin1@gmail.com,admin2@gmail.com`              |
+
+### Optional Variables
+
+| Variable                | Description                 | Default |
+| ----------------------- | --------------------------- | ------- |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name       | -       |
+| `CLOUDINARY_API_KEY`    | Cloudinary API key          | -       |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret       | -       |
+| `DISCORD_WEBHOOK_URL`   | Discord webhook for logging | -       |
+| `PORT`                  | Server port                 | `3000`  |
+
+## 🎯 Setting Up OAuth
+
+### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable Google+ API
+4. Go to Credentials → Create Credentials → OAuth 2.0 Client ID
+5. Application type: Web application
+6. Authorized redirect URIs:
+   - `http://localhost:3000/auth/google/callback` (for local dev)
+   - `https://your-domain.vercel.app/auth/google/callback` (for production)
+7. Copy Client ID and Client Secret to your `.env` file
+
+## 📸 Setting Up Cloudinary
+
+1. Sign up at [Cloudinary](https://cloudinary.com/)
+2. Go to Dashboard
+3. Copy your Cloud Name, API Key, and API Secret
+4. Add them to your `.env` file
+
+## 🗄️ Setting Up MongoDB Atlas
+
+1. Sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a new cluster (free tier available)
+3. Create a database user
+4. Whitelist your IP address (or use `0.0.0.0/0` for all IPs)
+5. Get connection string and add to `.env`
+
+## 🚢 Deployment
+
+### Deploy to Vercel
+
+See [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) for detailed deployment instructions.
+
+**Quick Deploy:**
+
 ```bash
-git clone <your-repo-url>
-cd vivid-vision
+# Install Vercel CLI
+npm install -g vercel
+
+# Login
+vercel login
+
+# Deploy
+vercel
+
+# Deploy to production
+vercel --prod
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+Remember to set all environment variables in Vercel dashboard!
 
-3. Create `.env` file in root directory:
-```env
-MONGODB_URI=your_mongodb_connection_string
-SESSION_SECRET=your_random_secret_string
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
-DISCORD_WEBHOOK_URL=your_discord_webhook_url (optional)
-PORT=3000
-```
+## 🛠️ Available Scripts
 
-4. Start the development server:
-```bash
-npm run dev
-```
+| Script                 | Command                 | Description                               |
+| ---------------------- | ----------------------- | ----------------------------------------- |
+| `npm start`            | `node api/index.js`     | Start production server                   |
+| `npm run dev`          | `nodemon api/index.js`  | Start development server with auto-reload |
+| `npm run vercel-build` | `echo 'Build complete'` | Vercel build command                      |
 
-5. Visit `http://localhost:3000`
+## 🔒 Admin Access
 
-## Deployment
+To make a user an admin:
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions for Vercel.
+1. Add their Google email to the `ADMIN_EMAILS` environment variable
+2. Format: `admin1@gmail.com,admin2@gmail.com` (comma-separated, no spaces)
+3. User needs to logout and login again for changes to take effect
+4. Access admin panel at: `/admin.html`
 
-## Project Structure
+## 🌟 Key Features Explained
 
-```
-vivid-vision/
-├── models/           # MongoDB schemas
-├── public/           # Static files (HTML, CSS, JS)
-├── routes/           # Express routes
-├── uploads/          # Uploaded product images
-├── utils/            # Utility functions
-├── server.js         # Main server file
-└── package.json      # Dependencies
-```
+### Product Management
 
-## Admin Panel
+- Multiple image uploads via Cloudinary
+- Drag-and-drop image reordering
+- Primary image selection
+- Stock status tracking
+- Featured product highlighting
+- Category organization
 
-Access the admin panel at `/admin` (requires admin privileges).
+### User Management
 
-Features:
-- Product management (CRUD)
-- User management
-- Comment moderation
-- Statistics dashboard
-- Image converter tool
-- Developer tools
+- View all registered users
+- Ban/unban functionality
+- Ban duration options (permanent or temporary)
+- Admin role management
 
-## Environment Variables
+### Comments System
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `MONGODB_URI` | MongoDB connection string | Yes |
-| `SESSION_SECRET` | Secret for session encryption | Yes |
-| `GOOGLE_CLIENT_ID` | Google OAuth client ID | Yes |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Yes |
-| `GOOGLE_CALLBACK_URL` | OAuth callback URL | Yes |
-| `DISCORD_WEBHOOK_URL` | Discord webhook for logging | No |
-| `PORT` | Server port (default: 3000) | No |
+- User comments on products
+- Admin replies to comments
+- Threaded comment display
 
-## License
+### Security
 
-MIT
+- Session-based authentication
+- Admin-only route protection
+- Ban system to prevent unauthorized access
+- Secure cookie settings for production
 
-## Author
+## 📝 API Endpoints
 
-Vivid Vision Team
-```
+### Authentication
+
+- `GET /auth/google` - Initiate Google OAuth
+- `GET /auth/google/callback` - OAuth callback
+- `GET /auth/me` - Get current user
+- `POST /auth/logout` - Logout
+
+### Products
+
+- `GET /api/products` - List all active products
+- `GET /api/products/:id` - Get single product
+
+### Admin (Requires Admin)
+
+- `GET /api/admin/users` - List users
+- `POST /api/admin/users/:id/ban` - Ban user
+- `POST /api/admin/users/:id/unban` - Unban user
+- `GET /api/admin/products` - List all products
+- `POST /api/admin/products` - Create product
+- `PUT /api/admin/products/:id` - Update product
+- `DELETE /api/admin/products/:id` - Delete product
+- `GET /api/admin/categories` - List categories
+- `POST /api/admin/categories` - Create category
+- `DELETE /api/admin/categories/:id` - Delete category
+- `GET /api/admin/statistics` - Get stats
+- `GET /api/admin/comments/unreplied` - Get comments
+- `POST /api/admin/comments/:id/reply` - Reply to comment
+
+## 🐛 Troubleshooting
+
+### Server won't start
+
+- Check if `.env` file exists with correct values
+- Verify MONGODB_URI is correct
+- Ensure Node.js version is 18 or higher
+
+### Can't login
+
+- Verify Google OAuth credentials are correct
+- Check GOOGLE_CALLBACK_URL matches in both `.env` and Google Console
+- Make sure session secret is set
+
+### Can't access admin panel
+
+- Verify your email is in ADMIN_EMAILS
+- Logout and login again
+- Check console for errors
+
+### Images won't upload
+
+- Verify Cloudinary credentials
+- Check network connectivity
+- Ensure file size is under limits
+
+## 📞 Support
+
+For issues and questions:
+
+- Check the [DEPLOYMENT.md](./DEPLOYMENT.md) guide
+- Review [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md) for deployment help
+- Check console logs for error messages
+
+## 📄 License
+
+This project is private and proprietary.
+
+---
+
+**Made with ❤️ for Vivid Vision**
