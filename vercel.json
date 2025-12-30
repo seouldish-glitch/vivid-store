@@ -26,6 +26,42 @@
       "destination": "/api/index.js"
     },
     {
+      "source": "/home",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/products",
+      "destination": "/products.html"
+    },
+    {
+      "source": "/product",
+      "destination": "/product.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin-product-editor",
+      "destination": "/admin-product-editor.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/checkout.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact.html"
+    },
+    {
+      "source": "/banned",
+      "destination": "/banned.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index.js"
     }
