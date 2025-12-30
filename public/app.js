@@ -159,8 +159,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function initAuthUI() {
   try {
-    const res = await fetch("/api/me", { credentials: "include" });
-    if (!res.ok) throw new Error("api/me failed");
+    const res = await fetch("/auth/me", { credentials: "include" });
+    if (!res.ok) throw new Error("auth/me failed");
 
     const data = await res.json();
 
@@ -168,7 +168,7 @@ async function initAuthUI() {
     const userPic = document.getElementById("userPic");
     const userName = document.getElementById("userName");
 
-    if (data.loggedIn) {
+    if (data.user) {
       if (userInfo) {
         userInfo.style.display = "flex";
 
