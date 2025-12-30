@@ -1,62 +1,35 @@
 {
   "version": 2,
   "buildCommand": "npm install",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/auth/(.*)",
-      "destination": "/api/index.js"
+      "src": "/auth/(.*)",
+      "dest": "/api/index.js"
     },
     {
-      "source": "/api/env-check",
-      "destination": "/api/env-check.js"
+      "src": "/api/env-check",
+      "dest": "/api/env-check.js"
     },
     {
-      "source": "/api/migrate",
-      "destination": "/api/migrate.js"
+      "src": "/api/migrate",
+      "dest": "/api/migrate.js"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
+      "src": "/(.*)",
+      "dest": "/public/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(.*).html",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    },
-    {
       "source": "/api/(.*)",
       "headers": [
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-        },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
         {
           "key": "Access-Control-Allow-Headers",
           "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
