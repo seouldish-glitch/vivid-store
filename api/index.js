@@ -14,6 +14,13 @@ console.log("🚀 Starting Vivid Vision API...");
 console.log("Environment:", process.env.NODE_ENV || "development");
 console.log("Vercel:", process.env.VERCEL ? "Yes" : "No");
 
+// Debug: Log environment variable status
+console.log("🔍 Environment Variables Check:");
+console.log("- MONGODB_URI:", process.env.MONGODB_URI ? `Set (${process.env.MONGODB_URI.substring(0, 20)}...)` : "❌ NOT SET");
+console.log("- SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ Set" : "❌ NOT SET");
+console.log("- GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "✅ Set" : "❌ NOT SET");
+console.log("- Total env vars:", Object.keys(process.env).length);
+
 // Check for required environment variables
 if (!process.env.MONGODB_URI) {
   const errorMsg = "❌ ERROR: MONGODB_URI environment variable is required!";
@@ -26,14 +33,18 @@ if (!process.env.MONGODB_URI) {
       res.status(500).json({
         error: "Server Configuration Error",
         message: "Missing required environment variables. Please configure MONGODB_URI in Vercel dashboard.",
-        hint: "Go to Project Settings → Environment Variables"
+        hint: "Go to Project Settings → Environment Variables",
+        availableVars: Object.keys(process.env).filter(k => !k.includes('SECRET')).slice(0, 20)
       });
     });
     module.exports = app;
+    // IMPORTANT: Return early to prevent further code execution
+    return;
   } else {
     process.exit(1);
   }
 }
+
 
 
 // MongoDB Connection with better error handling
