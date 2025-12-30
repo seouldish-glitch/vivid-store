@@ -42,7 +42,7 @@ const scrollObserver = new IntersectionObserver((entries) => {
 
 async function initAuthUI() {
   try {
-    const res = await fetch("/api/me", { credentials: "include" });
+    const res = await fetch("/auth/me", { credentials: "include" });
     if (!res.ok) return;
     const data = await res.json();
 
@@ -50,7 +50,7 @@ async function initAuthUI() {
     const userPic = document.getElementById("userPic");
     const userName = document.getElementById("userName");
 
-    if (data.loggedIn) {
+    if (data.user) {
       if (userInfo) {
         userInfo.style.display = "flex";
         userInfo.onclick = (e) => {
@@ -64,7 +64,15 @@ async function initAuthUI() {
         });
       }
       if (userName) userName.textContent = data.user.name || "User";
-      if (userPic) userPic.src = "/avatar?" + Date.now();
+      
+      if (userPic) {
+        const avatarUrl = data.user.avatar || data.user.picture || "/default-user.jpeg";
+        userPic.src = avatarUrl;
+        userPic.onerror = () => {
+          userPic.src = "/default-user.jpeg";
+        };
+      }
+      
       loginBtn?.classList.add("hidden");
     } else {
       if (userInfo) userInfo.style.display = "none";

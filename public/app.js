@@ -185,7 +185,15 @@ async function initAuthUI() {
       }
       if (userName) userName.textContent = data.user.name || "User";
 
-      if (userPic) userPic.src = "/avatar?" + Date.now();
+      // Use Google profile picture or fallback to default
+      if (userPic) {
+        const avatarUrl = data.user.avatar || data.user.picture || "/default-user.jpeg";
+        userPic.src = avatarUrl;
+        // Fallback if image fails to load
+        userPic.onerror = () => {
+          userPic.src = "/default-user.jpeg";
+        };
+      }
 
       loginBtn?.classList.add("hidden");
     } else {
@@ -195,6 +203,9 @@ async function initAuthUI() {
     }
   } catch (err) {
     console.error("Auth UI error:", err);
+    // Show default avatar on error
+    const userPic = document.getElementById("userPic");
+    if (userPic) userPic.src = "/default-user.jpeg";
   }
 }
 
