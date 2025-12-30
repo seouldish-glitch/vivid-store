@@ -43,7 +43,15 @@ router.get(
         }
       });
 
-      res.redirect("/?login=success");
+      // Explicitly save session before redirect (important for serverless)
+      req.session.save((err) => {
+        if (err) {
+          console.error("❌ Session save error:", err);
+          return res.redirect("/?login=error");
+        }
+        console.log("✅ Session saved successfully");
+        res.redirect("/?login=success");
+      });
     } catch (err) {
       console.error("❌ OAuth callback error:", err);
       res.redirect("/?login=error");
