@@ -37,13 +37,13 @@ if (!process.env.MONGODB_URI) {
         availableVars: Object.keys(process.env).filter(k => !k.includes('SECRET')).slice(0, 20)
       });
     });
-    module.exports = app;
-    // IMPORTANT: Return early to prevent further code execution
-    return;
+    // Don't return early - let the rest of the app initialize
+    // This allows static files to still be served
   } else {
     process.exit(1);
   }
 }
+
 
 
 
