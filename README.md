@@ -1,6 +1,8 @@
 # 🎨 Vivid Store - E-commerce Platform
 
-A modern, feature-rich e-commerce platform built with Express.js, MongoDB, and Google OAuth authentication. Designed for seamless deployment to Vercel.
+A modern, feature-rich e-commerce platform built with Express.js, MongoDB, and Google OAuth authentication. **Fully serverless** and optimized for Vercel deployment.
+
+> 🚀 **NEW**: Now fully serverless! See [SERVERLESS_GUIDE.md](./SERVERLESS_GUIDE.md) for deployment details.
 
 ## ✨ Features
 
@@ -72,7 +74,8 @@ A modern, feature-rich e-commerce platform built with Express.js, MongoDB, and G
 ```
 vivid-store-main/
 ├── api/
-│   └── index.js           # Main serverless function entry point
+│   ├── index.js           # Main serverless function entry point
+│   └── migrate.js         # Serverless migration endpoint
 ├── config/
 │   └── passport.js        # Passport OAuth configuration
 ├── models/
@@ -111,6 +114,7 @@ vivid-store-main/
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret    | `GOCSPX-abc123def456`                            |
 | `GOOGLE_CALLBACK_URL`  | OAuth callback URL            | `http://localhost:3000/auth/google/callback`     |
 | `ADMIN_EMAILS`         | Comma-separated admin emails  | `admin1@gmail.com,admin2@gmail.com`              |
+| `MIGRATION_SECRET`     | Secret for migration endpoint | `random-secure-string-for-migrations`            |
 
 ### Optional Variables
 
@@ -252,6 +256,22 @@ To make a user an admin:
 - `GET /api/admin/statistics` - Get stats
 - `GET /api/admin/comments/unreplied` - Get comments
 - `POST /api/admin/comments/:id/reply` - Reply to comment
+
+### Migrations (Serverless)
+
+- `POST /api/migrate?secret=YOUR_SECRET` - Run database migrations
+
+**Usage:**
+
+```bash
+# Using curl
+curl -X POST "https://your-domain.vercel.app/api/migrate?secret=your-migration-secret"
+
+# Using PowerShell
+Invoke-WebRequest -Uri "https://your-domain.vercel.app/api/migrate?secret=your-migration-secret" -Method POST
+```
+
+See [SERVERLESS_GUIDE.md](./SERVERLESS_GUIDE.md) for detailed migration instructions.
 
 ## 🐛 Troubleshooting
 
