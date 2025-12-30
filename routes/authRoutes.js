@@ -14,24 +14,40 @@ router.get(
 // Google callback
 router.get(
   "/google/callback",
+  (req, res, next) => {
+    console.log("🔐 Google OAuth callback received");
+    console.log("Query params:", req.query);
+    console.log("Session ID:", req.sessionID);
+    console.log("Session:", req.session);
+    next();
+  },
   passport.authenticate("google", {
-    failureRedirect: "/?login=failed"
+    failureRedirect: "/?login=failed",
+    failureMessage: true
   }),
   async (req, res) => {
-    await logEvent({
-      category: "AUTH",
-      action: "LOGIN_SUCCESS",
-      user: {
-        email: req.user.email,
-        name: req.user.name,
-        id: req.user._id
-      },
-      meta: {
-        isAdmin: isAdminUser(req.user)
-      }
-    });
+    try {
+      console.log("✅ OAuth authentication successful");
+      console.log("User:", req.user);
+      
+      await logEvent({
+        category: "AUTH",
+        action: "LOGIN_SUCCESS",
+        user: {
+          email: req.user.email,
+          name: req.user.name,
+          id: req.user._id
+        },
+        meta: {
+          isAdmin: isAdminUser(req.user)
+        }
+      });
 
-    res.redirect("/?login=success");
+      res.redirect("/?login=success");
+    } catch (err) {
+      console.error("❌ OAuth callback error:", err);
+      res.redirect("/?login=error");
+    }
   }
 );
 
