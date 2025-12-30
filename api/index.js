@@ -94,15 +94,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
+const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL;
+
 const sessionConfig = {
   secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Trust proxy for Vercel
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction, // HTTPS only in production
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    sameSite: isProduction ? "lax" : "lax", // Changed from "none" to "lax"
+    path: "/",
   },
 };
 
@@ -112,6 +116,9 @@ if (process.env.MONGODB_URI) {
     sessionConfig.store = MongoStore.create({
       mongoUrl: process.env.MONGODB_URI,
       touchAfter: 24 * 3600, // lazy session update
+      crypto: {
+        secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production"
+      }
     });
     console.log("✅ MongoStore configured");
   } catch (err) {
