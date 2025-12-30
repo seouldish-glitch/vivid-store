@@ -1,4 +1,4 @@
-// /api/index.js
+// Load environment variables
 require("dotenv").config();
 
 const express = require("express");
@@ -6,117 +6,211 @@ const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const mongoose = require("mongoose");
 const passport = require("passport");
+const path = require("path");
 
 const app = express();
 
-/* -------------------------------------------------
-   Basic App Setup
--------------------------------------------------- */
+console.log("🚀 Starting Vivid Vision API...");
+console.log("Environment:", process.env.NODE_ENV || "development");
+console.log("Vercel:", process.env.VERCEL ? "Yes" : "No");
+
+// Debug: Log environment variable status
+console.log("🔍 Environment Variables Check:");
+console.log("- MONGODB_URI:", process.env.MONGODB_URI ? `Set (${process.env.MONGODB_URI.substring(0, 20)}...)` : "❌ NOT SET");
+console.log("- SESSION_SECRET:", process.env.SESSION_SECRET ? "✅ Set" : "❌ NOT SET");
+console.log("- GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID ? "✅ Set" : "❌ NOT SET");
+console.log("- Total env vars:", Object.keys(process.env).length);
+
+// Check for required environment variables
+if (!process.env.MONGODB_URI) {
+  const errorMsg = "❌ ERROR: MONGODB_URI environment variable is required!";
+  console.error(errorMsg);
+  console.error("Available env vars:", Object.keys(process.env).filter(k => !k.includes('SECRET')).join(', '));
+  
+  // In serverless, we can't exit - send error response instead
+  if (process.env.VERCEL) {
+    app.use((req, res) => {
+      res.status(500).json({
+        error: "Server Configuration Error",
+        message: "Missing required environment variables. Please configure MONGODB_URI in Vercel dashboard.",
+        hint: "Go to Project Settings → Environment Variables",
+        availableVars: Object.keys(process.env).filter(k => !k.includes('SECRET')).slice(0, 20)
+      });
+    });
+    // Don't return early - let the rest of the app initialize
+    // This allows static files to still be served
+  } else {
+    process.exit(1);
+  }
+}
+
+
+
+
+// MongoDB Connection with better error handling
+let mongooseConnected = false;
+
+if (process.env.MONGODB_URI) {
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log("✅ MongoDB connected");
+      mongooseConnected = true;
+    })
+    .catch((err) => {
+      console.error("❌ MongoDB connection error:", err.message);
+      // Don't exit in serverless - let app handle requests with error responses
+      if (!process.env.VERCEL) {
+        process.exit(1);
+      }
+    });
+} else {
+  console.log("⚠️ Skipping MongoDB connection: MONGODB_URI not set");
+}
+
+// Import models (register them with Mongoose)
+try {
+  require("../models/User");
+  require("../models/Product");
+  require("../models/Category");
+  require("../models/Comment");
+  require("../models/BannedUser");
+  console.log("✅ Models loaded");
+} catch (err) {
+  console.error("❌ Error loading models:", err.message);
+}
+
+// Passport Configuration
+try {
+  const configurePassport = require("../config/passport");
+  configurePassport();
+  console.log("✅ Passport configured");
+} catch (err) {
+  console.error("❌ Error configuring passport:", err.message);
+}
+
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* -------------------------------------------------
-   MongoDB (serverless-safe connection)
--------------------------------------------------- */
-let cached = global.mongoose;
+// Session configuration
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  },
+};
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function connectDB() {
-  if (cached.conn) return cached.conn;
-
-  if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(process.env.MONGODB_URI)
-      .then((mongoose) => mongoose);
-  }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
-
+// Add MongoDB session store
 if (process.env.MONGODB_URI) {
-  connectDB().then(() => {
-    console.log("✅ MongoDB connected");
-  }).catch(err => {
-    console.error("❌ MongoDB error:", err.message);
-  });
+  try {
+    sessionConfig.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      touchAfter: 24 * 3600, // lazy session update
+    });
+    console.log("✅ MongoStore configured");
+  } catch (err) {
+    console.warn("⚠️ Failed to initialize MongoStore:", err.message);
+  }
+} else {
+  console.log("⚠️ Using memory store for sessions (No MONGODB_URI)");
 }
 
-/* -------------------------------------------------
-   Models
--------------------------------------------------- */
-require("../models/User");
-require("../models/Product");
-require("../models/Category");
-require("../models/Comment");
-require("../models/BannedUser");
+app.use(session(sessionConfig));
 
-/* -------------------------------------------------
-   Sessions (API-only usage)
--------------------------------------------------- */
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "dev-secret",
-    resave: false,
-    saveUninitialized: false,
-    store: process.env.MONGODB_URI
-      ? MongoStore.create({
-          mongoUrl: process.env.MONGODB_URI,
-          touchAfter: 24 * 3600,
-        })
-      : undefined,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-    },
-  })
-);
-
-/* -------------------------------------------------
-   Passport
--------------------------------------------------- */
-require("../config/passport")();
+// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-/* -------------------------------------------------
-   Routes (API ONLY)
--------------------------------------------------- */
-app.use("/auth", require("../routes/authRoutes"));
-app.use("/api/products", require("../routes/productRoutes"));
-app.use("/api/admin", require("../routes/adminRoutes"));
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, "../public")));
 
-/* -------------------------------------------------
-   Health Check
--------------------------------------------------- */
+
+// API Routes
+try {
+  const authRoutes = require("../routes/authRoutes");
+  const productRoutes = require("../routes/productRoutes");
+  const adminRoutes = require("../routes/adminRoutes");
+
+  app.use("/auth", authRoutes);
+  app.use("/api/products", productRoutes);
+  app.use("/api/admin", adminRoutes);
+  console.log("✅ Routes loaded");
+} catch (err) {
+  console.error("❌ Error loading routes:", err.message);
+  console.error(err.stack);
+}
+
+// Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    mongo:
-      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     timestamp: new Date().toISOString(),
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
-/* -------------------------------------------------
-   API Root
--------------------------------------------------- */
+// Root endpoint
 app.get("/api", (req, res) => {
   res.json({
-    name: "Vivid Vision API",
+    message: "Vivid Vision API",
     version: "1.0.0",
+    endpoints: {
+      auth: "/auth",
+      products: "/api/products",
+      admin: "/api/admin",
+      health: "/api/health",
+    },
   });
 });
 
-/* -------------------------------------------------
-   API 404 (JSON only)
--------------------------------------------------- */
-app.use((req, res) => {
-  res.status(404).json({ error: "API route not found" });
+// Handle SPA routing - serve index.html for non-API routes
+app.get("*", (req, res, next) => {
+  // Don't intercept API routes
+  if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
+    return next();
+  }
+  
+  // Check if the request is for a static file
+  const ext = path.extname(req.path);
+  if (ext) {
+    // Let express.static handle it, if not found, continue to 404
+    return next();
+  }
+  
+  // Serve index.html for client-side routing
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
+// 404 handler
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "../public/404.html"));
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
+
+// Export the Express app for Vercel
 module.exports = app;
+
+console.log("✅ Vivid Vision API initialized successfully");
+console.log("Ready to handle requests");
+
+// Only start the server if not in Vercel environment
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
