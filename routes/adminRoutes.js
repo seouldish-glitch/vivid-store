@@ -542,4 +542,53 @@ router.post("/developer", async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// ORDERS
+// ----------------------------------------------------
+const Order = require("../models/Order");
+
+router.get("/orders", async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "email")
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Fetch orders failed" });
+  }
+});
+
+router.put("/orders/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    // Log event
+    await logEvent({
+      category: "ADMIN",
+      action: "ORDER_UPDATE",
+      user: { email: req.user.email },
+      meta: { orderId: req.params.id, status }
+    });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: "Update order failed" });
+  }
+});
+
+router.delete("/orders/:id", async (req, res) => {
+  try {
+    await Order.findByIdAndDelete(req.params.id);
+    await logEvent({
+      category: "ADMIN",
+      action: "ORDER_DELETE",
+      user: { email: req.user.email },
+      meta: { orderId: req.params.id }
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Delete order failed" });
+  }
+});
+
 module.exports = router;

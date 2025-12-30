@@ -1,16 +1,24 @@
 const express = require("express");
 const router = express.Router();
 
-// Simple in-memory cart storage (for serverless, you'd want to use MongoDB)
-// For now, just return empty cart to prevent errors
+// Get cart from session
 router.get("/", (req, res) => {
-  // Return empty cart for now
-  res.json([]);
+  const cart = req.session.cart || [];
+  res.json(cart);
 });
 
+// Update cart
 router.post("/", (req, res) => {
-  // Accept cart updates but don't store (temporary fix)
-  res.json({ ok: true });
+  const { items } = req.body;
+  if (Array.isArray(items)) {
+    req.session.cart = items;
+    req.session.save((err) => {
+      if (err) console.error("Session save error", err);
+      res.json({ ok: true });
+    });
+  } else {
+    res.status(400).json({ error: "Invalid cart data" });
+  }
 });
 
 module.exports = router;
