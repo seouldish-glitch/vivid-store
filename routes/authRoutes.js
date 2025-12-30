@@ -68,7 +68,8 @@ router.get("/me", (req, res) => {
       id: req.user._id,
       name: req.user.name,
       email: req.user.email,
-      avatar: req.user.avatar,
+      avatar: req.user.avatar || req.user.picture,
+      picture: req.user.picture,
       isAdmin: isAdminUser(req.user)
     }
   });
