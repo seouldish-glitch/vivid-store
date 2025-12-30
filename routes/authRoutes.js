@@ -74,7 +74,7 @@ router.get("/me", (req, res) => {
   });
 });
 
-// Logout
+// Logout (POST)
 router.post("/logout", async (req, res) => {
   if (req.user) {
     await logEvent({
@@ -92,6 +92,28 @@ router.post("/logout", async (req, res) => {
     req.session.destroy(() => {
       res.clearCookie("connect.sid");
       res.json({ ok: true });
+    });
+  });
+});
+
+// Logout (GET) - for browser access
+router.get("/logout", async (req, res) => {
+  if (req.user) {
+    await logEvent({
+      category: "AUTH",
+      action: "LOGOUT",
+      user: {
+        email: req.user.email,
+        name: req.user.name,
+        id: req.user._id
+      }
+    });
+  }
+
+  req.logout(() => {
+    req.session.destroy(() => {
+      res.clearCookie("connect.sid");
+      res.redirect("/?logout=success");
     });
   });
 });
