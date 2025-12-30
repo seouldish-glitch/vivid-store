@@ -591,4 +591,61 @@ router.delete("/orders/:id", async (req, res) => {
   }
 });
 
+// ----------------------------------------------------
+// ANNOUNCEMENTS
+// ----------------------------------------------------
+const Announcement = require("../models/Announcement");
+
+router.get("/announcements", async (req, res) => {
+  try {
+    const list = await Announcement.find().sort({ createdAt: -1 });
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: "Fetch announcements failed" });
+  }
+});
+
+router.post("/announcements", async (req, res) => {
+  try {
+    const { title, message, type, isActive } = req.body;
+    const ann = await Announcement.create({
+      title,
+      message,
+      type,
+      isActive: isActive === true || isActive === "true" || isActive === "on",
+      createdBy: req.user._id
+    });
+    
+    await logEvent({
+      category: "ADMIN",
+      action: "ANNOUNCEMENT_CREATE",
+      user: { email: req.user.email },
+      meta: { id: ann._id, title }
+    });
+
+    res.json(ann);
+  } catch (err) {
+    res.status(400).json({ error: "Create announcement failed" });
+  }
+});
+
+router.delete("/announcements/:id", async (req, res) => {
+  try {
+    await Announcement.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Delete announcement failed" });
+  }
+});
+
+router.put("/announcements/:id", async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    const ann = await Announcement.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+    res.json(ann);
+  } catch(err) {
+     res.status(500).json({ error: "Update failed" });
+  }
+});
+
 module.exports = router;
