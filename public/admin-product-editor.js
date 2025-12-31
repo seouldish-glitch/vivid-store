@@ -1,89 +1,23 @@
-const form = document.getElementById("productForm");
-const pageTitle = document.getElementById("pageTitle");
-const imageInput = document.getElementById("imageInput");
-const imagePreview = document.getElementById("imagePreview");
-const categorySelect = document.getElementById("categorySelect");
 
-let mode = "create";
-let productId = null;
-let existingUrls = [];
-let newFiles = [];
-let newFileUrls = [];
+// Helper functions for the product editor modal
+// Expects 'productEditorState' to be defined in global scope (from admin.js)
 
-const params = new URLSearchParams(window.location.search);
-if (params.get("id")) {
-    mode = "edit";
-    productId = params.get("id");
-    pageTitle.textContent = "Edit Product";
-    loadProduct(productId);
-} else {
-    pageTitle.textContent = "Create Product";
-    loadCategories();
-}
-
-async function loadCategories(selectedId = null) {
-    try {
-        const res = await fetch("/api/admin/categories");
-        if (!res.ok) return;
-        const categories = await res.json();
-        
-        categorySelect.innerHTML = '<option value="">-- No Category --</option>';
-        
-        categories.forEach(c => {
-            const opt = document.createElement("option");
-            opt.value = c._id;
-            opt.textContent = c.name;
-            if (selectedId && c._id === selectedId) opt.selected = true;
-            categorySelect.appendChild(opt);
-        });
-    } catch (err) {
-        console.error("Failed to load categories", err);
-    }
-}
-
-async function loadProduct(id) {
-    try {
-        const res = await fetch(`/api/products/${id}`);
-        if (!res.ok) throw new Error("Failed to load product");
-        const p = await res.json();
-        await loadCategories(p.category);
-        populateForm(p);
-    } catch (err) {
-        console.error(err);
-        alert("Error loading product: " + err.message);
-    }
-}
-
-function populateForm(p) {
-    form.elements.name.value = p.name || "";
-    form.elements.subtitle.value = p.subtitle || "";
-    form.elements.price.value = p.price || 0;
-    form.elements.tag.value = p.tag || "";
-    form.elements.features.value = (p.features || []).join("\n");
-    form.elements.inStock.checked = p.inStock !== false;
-    form.elements.isFeatured.checked = p.isFeatured === true;
-    if (form.elements.category) form.elements.category.value = p.category || "";
-
-    if (p.imageUrls && p.imageUrls.length) {
-        existingUrls = [...p.imageUrls];
-    } else if (p.imageUrl) {
-        existingUrls = [p.imageUrl];
-    }
-    renderPreviews();
-}
-
-function renderPreviews() {
+window.renderEditorPreviews = function() {
+    const imagePreview = document.getElementById("productEditorImagePreview");
+    if (!imagePreview) return;
+    
     imagePreview.innerHTML = "";
 
+    const { existingUrls, newFileUrls, selectedPrimary } = productEditorState;
     const totalItems = existingUrls.length + newFileUrls.length;
 
     const renderItem = (url, index, isNew) => {
         const div = document.createElement("div");
         div.className = "preview-item";
 
-        if (selectedPrimary >= totalItems) selectedPrimary = 0;
-
-        const isPrimary = (index === selectedPrimary);
+        // bounds check
+        if (productEditorState.selectedPrimary >= totalItems) productEditorState.selectedPrimary = 0;
+        const isPrimary = (index === productEditorState.selectedPrimary);
 
         div.innerHTML = `
       <img src="${url}" style="${isPrimary ? 'border:2px solid var(--accent);' : ''}">
@@ -91,95 +25,42 @@ function renderPreviews() {
       ${isPrimary ? '<span class="badge" style="top:auto; bottom:4px; left:4px; background:#22c55e;">Primary</span>' : ''}
       
       <div style="position:absolute; top:2px; right:2px; display:flex; flex-direction:column; gap:2px;">
-         <button type="button" class="vv-btn danger" style="padding:2px 6px; font-size:10px;" onclick="${isNew ? `removeNew(${index - existingUrls.length})` : `removeExisting(${index})`}">x</button>
+         <button type="button" class="remove-btn" onclick="${isNew ? `removeEditorNew(${index - existingUrls.length})` : `removeEditorExisting(${index})`}">x</button>
       </div>
 
-      ${!isPrimary ? `<button type="button" class="vv-btn" style="position:absolute; bottom:2px; right:2px; padding:2px 6px; font-size:9px;" onclick="setPrimary(${index})">★</button>` : ''}
+      ${!isPrimary ? `<button type="button" class="primary-btn" onclick="setEditorPrimary(${index})">★</button>` : ''}
     `;
         imagePreview.appendChild(div);
     };
 
     existingUrls.forEach((url, i) => renderItem(url, i, false));
     newFileUrls.forEach((url, i) => renderItem(url, existingUrls.length + i, true));
-}
-
-let selectedPrimary = 0;
-
-window.setPrimary = function (index) {
-    selectedPrimary = index;
-    renderPreviews();
-}
-
-window.removeExisting = function (index) {
-    existingUrls.splice(index, 1);
-    if (selectedPrimary === index) selectedPrimary = 0;
-    else if (selectedPrimary > index) selectedPrimary--;
-    renderPreviews();
 };
 
-window.removeNew = function (nfIndex) {
-    newFiles.splice(nfIndex, 1);
-    const url = newFileUrls[nfIndex];
-    newFileUrls.splice(nfIndex, 1);
+window.setEditorPrimary = function(index) {
+    productEditorState.selectedPrimary = index;
+    renderEditorPreviews();
+}
+
+window.removeEditorExisting = function(index) {
+    productEditorState.existingUrls.splice(index, 1);
+    if (productEditorState.selectedPrimary === index) productEditorState.selectedPrimary = 0;
+    else if (productEditorState.selectedPrimary > index) productEditorState.selectedPrimary--;
+    renderEditorPreviews();
+};
+
+window.removeEditorNew = function(nfIndex) {
+    productEditorState.newFiles.splice(nfIndex, 1);
+    const url = productEditorState.newFileUrls[nfIndex];
+    productEditorState.newFileUrls.splice(nfIndex, 1);
     URL.revokeObjectURL(url);
 
-    const absoluteIndex = existingUrls.length + nfIndex;
-    if (selectedPrimary === absoluteIndex) selectedPrimary = 0;
-    else if (selectedPrimary > absoluteIndex) selectedPrimary--;
+    const absoluteIndex = productEditorState.existingUrls.length + nfIndex;
+    if (productEditorState.selectedPrimary === absoluteIndex) productEditorState.selectedPrimary = 0;
+    else if (productEditorState.selectedPrimary > absoluteIndex) productEditorState.selectedPrimary--;
 
-    renderPreviews();
+    renderEditorPreviews();
 };
-
-imageInput.addEventListener("change", (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-
-    const currentTotal = existingUrls.length + newFiles.length;
-    const availableSlots = 5 - currentTotal;
-
-    if (availableSlots <= 0) {
-        alert("Maximum 5 images allowed per product. Please remove some images first.");
-        imageInput.value = "";
-        return;
-    }
-
-    if (files.length > availableSlots) {
-        alert(`You can only add ${availableSlots} more image(s). Maximum 5 images per product.`);
-    }
-
-    const filesToProcess = files.slice(0, availableSlots);
-
-    const processingMsg = document.createElement("div");
-    processingMsg.style.cssText = "padding:8px; background:rgba(245,200,76,0.1); border-radius:6px; margin:8px 0; font-size:12px; color:var(--accent);";
-    processingMsg.textContent = `⏳ Processing ${filesToProcess.length} image(s)...`;
-    imagePreview.insertBefore(processingMsg, imagePreview.firstChild);
-
-    let processed = 0;
-    filesToProcess.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const resizedBlob = resizeImageToBlob(img, file.name);
-                resizedBlob.then(blob => {
-                    const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                    newFiles.push(resizedFile);
-                    newFileUrls.push(URL.createObjectURL(resizedFile));
-
-                    processed++;
-                    if (processed === filesToProcess.length) {
-                        processingMsg.remove();
-                        renderPreviews();
-                    }
-                });
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    imageInput.value = "";
-});
 
 function resizeImageToBlob(img, originalName) {
     return new Promise((resolve) => {
@@ -207,58 +88,124 @@ function resizeImageToBlob(img, originalName) {
     });
 }
 
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+// Initialize listeners
+(() => {
+    const imageInput = document.getElementById("productEditorImageInput");
+    const form = document.getElementById("productEditorForm");
+    const imagePreview = document.getElementById("productEditorImagePreview");
 
-    const fd = new FormData(form);
+    if (imageInput) {
+        imageInput.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
 
-    const featuresRaw = form.elements.features.value;
-    const featuresArr = featuresRaw.split("\n").map(s => s.trim()).filter(Boolean);
-    fd.set("features", JSON.stringify(featuresArr));
+            const { existingUrls, newFiles } = productEditorState;
+            const currentTotal = existingUrls.length + newFiles.length;
+            const availableSlots = 5 - currentTotal;
 
-    fd.set("inStock", form.elements.inStock.checked ? "true" : "false");
-    fd.set("isFeatured", form.elements.isFeatured.checked ? "true" : "false");
-    
-    const catVal = categorySelect.value;
-    if (catVal) fd.set("category", catVal);
-    else fd.delete("category");
+            if (availableSlots <= 0) {
+                alert("Maximum 5 images allowed per product. Please remove some images first.");
+                imageInput.value = "";
+                return;
+            }
 
-    fd.delete("images");
+            if (files.length > availableSlots) {
+                alert(`You can only add ${availableSlots} more image(s). Maximum 5 images per product.`);
+            }
 
-    newFiles.forEach(f => fd.append("images", f));
+            const filesToProcess = files.slice(0, availableSlots);
 
-    existingUrls.forEach(u => fd.append("existingImageUrls", u));
+            const processingMsg = document.createElement("div");
+            processingMsg.style.cssText = "padding:8px; background:rgba(245,200,76,0.1); border-radius:6px; margin:8px 0; font-size:12px; color:var(--accent);";
+            processingMsg.textContent = `⏳ Processing ${filesToProcess.length} image(s)...`;
+            if(imagePreview) imagePreview.insertBefore(processingMsg, imagePreview.firstChild);
 
-    fd.append("primaryIndex", selectedPrimary);
+            let processed = 0;
+            filesToProcess.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const resizedBlob = resizeImageToBlob(img, file.name);
+                        resizedBlob.then(blob => {
+                            const resizedFile = new File([blob], file.name, { type: 'image/jpeg' });
+                            productEditorState.newFiles.push(resizedFile);
+                            productEditorState.newFileUrls.push(URL.createObjectURL(resizedFile));
 
-    const url = mode === "edit" ? `/api/admin/products/${productId}` : `/api/admin/products`;
-    const method = mode === "edit" ? "PUT" : "POST";
+                            processed++;
+                            if (processed === filesToProcess.length) {
+                                processingMsg.remove();
+                                renderEditorPreviews();
+                            }
+                        });
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
 
-    try {
-        const btn = form.querySelector('button[type="submit"]');
-        const oldText = btn.textContent;
-        btn.textContent = "Saving...";
-        btn.disabled = true;
-
-        const res = await fetch(url, {
-            method,
-            body: fd,
-            credentials: "include"
+            imageInput.value = "";
         });
-
-        if (!res.ok) {
-            const txt = await res.text();
-            throw new Error(txt || res.statusText);
-        }
-
-        alert("Saved successfully!");
-        window.location.href = "/admin";
-
-    } catch (err) {
-        console.error(err);
-        alert("Error saving: " + err.message);
-        const btn = form.querySelector('button[type="submit"]');
-        btn.textContent = "Save Product";
-        btn.disabled = false;
     }
-});
+
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const fd = new FormData(form);
+            const { existingUrls, newFiles, selectedPrimary, mode, productId } = productEditorState;
+
+            const featuresRaw = form.elements.features.value;
+            const featuresArr = featuresRaw.split("\n").map(s => s.trim()).filter(Boolean);
+            fd.set("features", JSON.stringify(featuresArr));
+
+            fd.set("inStock", form.elements.inStock.checked ? "true" : "false");
+            fd.set("isFeatured", form.elements.isFeatured.checked ? "true" : "false");
+            
+            const catVal = form.elements.category.value;
+            if (catVal) fd.set("category", catVal);
+            else fd.delete("category");
+
+            fd.delete("images");
+
+            newFiles.forEach(f => fd.append("images", f));
+            existingUrls.forEach(u => fd.append("existingImageUrls", u));
+
+            fd.append("primaryIndex", selectedPrimary);
+
+            const url = mode === "edit" ? `/api/admin/products/${productId}` : `/api/admin/products`;
+            const method = mode === "edit" ? "PUT" : "POST";
+
+            try {
+                const btn = form.querySelector('button[type="submit"]');
+                const oldText = btn.textContent;
+                btn.textContent = "Saving...";
+                btn.disabled = true;
+
+                const res = await fetch(url, {
+                    method,
+                    body: fd,
+                    credentials: "include"
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(txt || res.statusText);
+                }
+
+                alert("Saved successfully!");
+                closeProductEditor();
+                // Refresh products list in admin panel if available
+                if (window.loadProducts) window.loadProducts();
+
+            } catch (err) {
+                console.error(err);
+                alert("Error saving: " + err.message);
+            } finally {
+                const btn = form.querySelector('button[type="submit"]');
+                btn.textContent = "Save Product";
+                btn.disabled = false;
+            }
+        });
+    }
+})();

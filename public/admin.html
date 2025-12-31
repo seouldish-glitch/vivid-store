@@ -532,7 +532,154 @@
       </div>
     </main>
 
+    <!-- Product Editor Modal -->
+    <div id="productEditorModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+          <h3 id="productEditorTitle">Create Product</h3>
+          <button class="modal-close" onclick="closeProductEditor()">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="productEditorForm" enctype="multipart/form-data">
+            <div class="form-group">
+              <label>Product Name</label>
+              <input name="name" class="input" style="width:100%" required>
+            </div>
+
+            <div class="form-group">
+              <label>Subtitle</label>
+              <input name="subtitle" class="input" style="width:100%">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="flex: 1;">
+                <label>Price</label>
+                <input name="price" type="number" class="input" style="width:100%" required>
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Tag (e.g. New, Bestseller)</label>
+                <input name="tag" class="input" style="width:100%">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>Category</label>
+              <select name="category" id="productEditorCategorySelect" class="input" style="width:100%">
+                <option value="">-- No Category --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Features (One per line)</label>
+              <textarea name="features" class="input" style="width:100%; resize: vertical; min-height: 120px; line-height: 1.5;"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Images (Select multiple - Max 5)</label>
+              <input type="file" name="images" id="productEditorImageInput" accept="image/*" multiple class="input" style="width:100%">
+              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                ✨ Images will be automatically resized to 1200×900px (4:3 ratio) and optimized
+              </div>
+              <div id="productEditorImagePreview" class="preview-area"></div>
+            </div>
+
+            <div class="form-group flex-row" style="justify-content:flex-start; gap:20px;">
+              <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer; width:auto;">
+                <input type="checkbox" name="inStock" value="true" checked>
+                <span style="color:var(--text-main); font-size:14px;">In Stock</span>
+              </label>
+              <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer; width:auto;">
+                <input type="checkbox" name="isFeatured" value="true">
+                <span style="color:var(--text-main); font-size:14px;">Featured Product</span>
+              </label>
+            </div>
+
+            <input type="hidden" name="primaryIndex" value="0">
+            <input type="hidden" id="productEditorId" value="">
+
+            <div style="text-align:right; border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
+              <button type="button" class="vv-btn ghost" onclick="closeProductEditor()">Cancel</button>
+              <button type="submit" class="vv-btn" style="min-width:120px; margin-left:10px;">Save Product</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+      .form-row {
+        display: flex;
+        gap: 20px;
+      }
+      .preview-area {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .preview-item {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+      }
+      .preview-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .preview-item .badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .preview-item .remove-btn {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: rgba(255, 0, 0, 0.8);
+        color: #fff;
+        border: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 0;
+      }
+      .preview-item .primary-btn {
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        background: rgba(0, 150, 255, 0.9);
+        color: #fff;
+        border: none;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+
     <script src="/modals.js"></script>
+    <script src="/admin-product-editor.js"></script>
     <script src="/admin.js" defer></script>
   </body>
 </html>

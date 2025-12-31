@@ -745,7 +745,7 @@
   });
 
   createProductBtn.addEventListener("click", () => {
-    window.location.href = "/admin-product-editor.html";
+    openProductEditor();
   });
 
   function openProductModal(product, onSubmit) {
@@ -1766,3 +1766,115 @@
   });
 
 })();
+
+// Global state for product editor
+let productEditorState = {
+  mode: 'create',
+  productId: null,
+  existingUrls: [],
+  newFiles: [],
+  newFileUrls: [],
+  selectedPrimary: 0
+};
+
+// Global functions for product editor modal
+window.openProductEditor = function(productId = null) {
+  const modal = document.getElementById('productEditorModal');
+  const title = document.getElementById('productEditorTitle');
+  const form = document.getElementById('productEditorForm');
+  const idField = document.getElementById('productEditorId');
+  const categorySelect = document.getElementById('productEditorCategorySelect');
+  
+  // Reset state
+  productEditorState = {
+    mode: productId ? 'edit' : 'create',
+    productId: productId,
+    existingUrls: [],
+    newFiles: [],
+    newFileUrls: [],
+    selectedPrimary: 0
+  };
+  
+  // Reset form
+  form.reset();
+  document.getElementById('productEditorImagePreview').innerHTML = '';
+  document.getElementById('productEditorImageInput').value = '';
+  idField.value = productId || '';
+  
+  // Initialize categories if empty
+  if (categorySelect.options.length <= 1) {
+    loadEditorCategories();
+  }
+  
+  if (productId) {
+    title.textContent = 'Edit Product';
+    loadEditorProduct(productId);
+  } else {
+    title.textContent = 'Create Product';
+  }
+  
+  modal.style.display = 'flex';
+};
+
+window.closeProductEditor = function() {
+  const modal = document.getElementById('productEditorModal');
+  modal.style.display = 'none';
+  
+  // Clean up object URLs
+  productEditorState.newFileUrls.forEach(url => URL.revokeObjectURL(url));
+};
+
+// Functions to be used by admin-product-editor.js refactored code
+window.loadEditorCategories = async function(selectedId = null) {
+  const categorySelect = document.getElementById("productEditorCategorySelect");
+  try {
+    const res = await fetch("/api/admin/categories");
+    if (!res.ok) return;
+    const categories = await res.json();
+    
+    categorySelect.innerHTML = '<option value="">-- No Category --</option>';
+    
+    categories.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c._id;
+      opt.textContent = c.name;
+      if (selectedId && c._id === selectedId) opt.selected = true;
+      categorySelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Failed to load categories", err);
+  }
+};
+
+window.loadEditorProduct = async function(id) {
+  try {
+    const res = await fetch(`/api/products/${id}`);
+    if (!res.ok) throw new Error("Failed to load product");
+    const p = await res.json();
+    await loadEditorCategories(p.category);
+    populateEditorForm(p);
+  } catch (err) {
+    console.error(err);
+    alert("Error loading product: " + err.message);
+  }
+};
+
+window.populateEditorForm = function(p) {
+  const form = document.getElementById('productEditorForm');
+  form.elements.name.value = p.name || "";
+  form.elements.subtitle.value = p.subtitle || "";
+  form.elements.price.value = p.price || 0;
+  form.elements.tag.value = p.tag || "";
+  form.elements.features.value = (p.features || []).join("\n");
+  form.elements.inStock.checked = p.inStock !== false;
+  form.elements.isFeatured.checked = p.isFeatured === true;
+  if (form.elements.category) form.elements.category.value = p.category || "";
+
+  if (p.imageUrls && p.imageUrls.length) {
+    productEditorState.existingUrls = [...p.imageUrls];
+  } else if (p.imageUrl) {
+    productEditorState.existingUrls = [p.imageUrl];
+  }
+  renderEditorPreviews();
+};
+
