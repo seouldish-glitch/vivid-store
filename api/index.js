@@ -81,13 +81,10 @@ try {
 }
 
 // Passport Configuration
-try {
-  const configurePassport = require("../config/passport");
-  configurePassport();
-  console.log("✅ Passport configured");
-} catch (err) {
-  console.error("❌ Error configuring passport:", err.message);
-}
+// Passport Configuration
+const configurePassport = require("../config/passport");
+configurePassport();
+console.log("✅ Passport configured");
 
 // Middleware
 app.use(express.json());
