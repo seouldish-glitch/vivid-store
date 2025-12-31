@@ -21,14 +21,12 @@ window.renderEditorPreviews = function() {
 
         div.innerHTML = `
       <img src="${url}" style="${isPrimary ? 'border:2px solid var(--accent);' : ''}">
-      <span class="badge" style="${isNew ? 'background:rgba(245, 200, 76, 0.8)' : ''}">${isNew ? 'New' : 'Existing'}</span>
-      ${isPrimary ? '<span class="badge" style="top:auto; bottom:4px; left:4px; background:#22c55e;">Primary</span>' : ''}
+      <span class="badge" style="${isNew ? 'background:rgba(245, 200, 76, 0.9)' : ''}">${isNew ? 'New' : 'Existing'}</span>
+      ${isPrimary ? '<span class="badge" style="top:auto; bottom:6px; left:6px; background:#22c55e;">Primary</span>' : ''}
       
-      <div style="position:absolute; top:2px; right:2px; display:flex; flex-direction:column; gap:2px;">
-         <button type="button" class="remove-btn" onclick="${isNew ? `removeEditorNew(${index - existingUrls.length})` : `removeEditorExisting(${index})`}">x</button>
-      </div>
+      <button type="button" class="remove-btn" title="Remove Image" onclick="${isNew ? `removeEditorNew(${index - existingUrls.length})` : `removeEditorExisting(${index})`}">×</button>
 
-      ${!isPrimary ? `<button type="button" class="primary-btn" onclick="setEditorPrimary(${index})">★</button>` : ''}
+      ${!isPrimary ? `<button type="button" class="primary-btn" onclick="setEditorPrimary(${index})">Set Primary</button>` : ''}
     `;
         imagePreview.appendChild(div);
     };

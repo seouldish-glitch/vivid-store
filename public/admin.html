@@ -541,65 +541,64 @@
         </div>
         <div class="modal-body">
           <form id="productEditorForm" enctype="multipart/form-data">
-            <div class="form-group">
+            <div class="form-group full-width">
               <label>Product Name</label>
-              <input name="name" class="input" style="width:100%" required>
+              <input name="name" class="input" required placeholder="e.g. Neon Cyber Punk Poster">
+            </div>
+
+            <div class="form-group full-width">
+              <label>Subtitle</label>
+              <input name="subtitle" class="input" placeholder="e.g. Limited Edition A4 Print">
             </div>
 
             <div class="form-group">
-              <label>Subtitle</label>
-              <input name="subtitle" class="input" style="width:100%">
+              <label>Price (LKR)</label>
+              <input name="price" type="number" class="input" required placeholder="2500">
             </div>
 
-            <div class="form-row">
-              <div class="form-group" style="flex: 1;">
-                <label>Price</label>
-                <input name="price" type="number" class="input" style="width:100%" required>
-              </div>
-              <div class="form-group" style="flex: 1;">
-                <label>Tag (e.g. New, Bestseller)</label>
-                <input name="tag" class="input" style="width:100%">
-              </div>
+            <div class="form-group">
+              <label>Tag</label>
+              <input name="tag" class="input" placeholder="e.g. New Arrival">
             </div>
             
-            <div class="form-group">
+            <div class="form-group full-width">
               <label>Category</label>
-              <select name="category" id="productEditorCategorySelect" class="input" style="width:100%">
+              <select name="category" id="productEditorCategorySelect" class="input">
                 <option value="">-- No Category --</option>
               </select>
             </div>
 
-            <div class="form-group">
-              <label>Features (One per line)</label>
-              <textarea name="features" class="input" style="width:100%; resize: vertical; min-height: 120px; line-height: 1.5;"></textarea>
+            <div class="form-group full-width">
+              <label>Features</label>
+              <textarea name="features" class="input" placeholder="Enter each feature on a new line..."></textarea>
             </div>
 
-            <div class="form-group">
-              <label>Images (Select multiple - Max 5)</label>
-              <input type="file" name="images" id="productEditorImageInput" accept="image/*" multiple class="input" style="width:100%">
-              <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                ✨ Images will be automatically resized to 1200×900px (4:3 ratio) and optimized
+            <div class="form-group full-width">
+              <label>Product Images</label>
+              <input type="file" name="images" id="productEditorImageInput" accept="image/*" multiple class="input" style="padding: 10px;">
+              <div style="font-size:12px; color:var(--text-muted); margin-top:8px; display:flex; align-items:center; gap:6px;">
+                <span style="color:var(--accent)">ℹ</span> Automatic resizing to 1200×900px (4:3) enabled
               </div>
               <div id="productEditorImagePreview" class="preview-area"></div>
             </div>
 
-            <div class="form-group flex-row" style="justify-content:flex-start; gap:20px;">
-              <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer; width:auto;">
+            <div class="form-group full-width" style="flex-direction: row; gap: 24px;">
+              <label class="toggle-label">
                 <input type="checkbox" name="inStock" value="true" checked>
-                <span style="color:var(--text-main); font-size:14px;">In Stock</span>
+                <span>Stock Available</span>
               </label>
-              <label class="flex-row" style="justify-content:flex-start; gap:10px; cursor:pointer; width:auto;">
+              <label class="toggle-label">
                 <input type="checkbox" name="isFeatured" value="true">
-                <span style="color:var(--text-main); font-size:14px;">Featured Product</span>
+                <span>Featured Product</span>
               </label>
             </div>
 
             <input type="hidden" name="primaryIndex" value="0">
             <input type="hidden" id="productEditorId" value="">
 
-            <div style="text-align:right; border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
+            <div class="form-actions">
               <button type="button" class="vv-btn ghost" onclick="closeProductEditor()">Cancel</button>
-              <button type="submit" class="vv-btn" style="min-width:120px; margin-left:10px;">Save Product</button>
+              <button type="submit" class="vv-btn">Save Product</button>
             </div>
           </form>
         </div>
@@ -607,74 +606,258 @@
     </div>
 
     <style>
-      .form-group {
-        margin-bottom: 20px;
+      #productEditorModal .modal-content {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        border-radius: 16px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
       }
-      .form-group label {
-        display: block;
-        margin-bottom: 8px;
+
+      #productEditorModal .modal-header {
+        padding: 24px 30px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255,255,255,0.02);
+      }
+
+      #productEditorModal .modal-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-main);
+        letter-spacing: -0.5px;
+      }
+
+      #productEditorModal .modal-close {
+        background: transparent;
+        border: none;
         color: var(--text-muted);
+        font-size: 28px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+      #productEditorModal .modal-close:hover { color: var(--text-main); }
+
+      #productEditorModal .modal-body {
+        padding: 30px;
+        overflow-y: auto;
+      }
+
+      /* Form Grid Layout */
+      #productEditorForm {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      #productEditorForm .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      /* Full width items */
+      #productEditorForm .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+
+      #productEditorForm label {
         font-size: 13px;
+        font-weight: 500;
+        color: var(--text-muted);
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
       }
-      .form-row {
+
+      #productEditorForm .input {
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        color: var(--text-main);
+        font-size: 15px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      }
+      #productEditorForm .input:focus {
+        border-color: var(--accent);
+        background: rgba(0,0,0,0.3);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+      }
+      #productEditorForm textarea.input {
+        line-height: 1.6;
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      /* Custom Checkbox Toggles */
+      .toggle-label {
         display: flex;
-        gap: 20px;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        transition: all 0.2s;
+        user-select: none;
       }
+      .toggle-label:hover {
+        background: rgba(255,255,255,0.06);
+        border-color: var(--text-muted);
+      }
+      .toggle-label input[type="checkbox"] {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--text-muted);
+        border-radius: 6px;
+        position: relative;
+        transition: all 0.2s;
+      }
+      .toggle-label input[type="checkbox"]:checked {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .toggle-label input[type="checkbox"]:checked::after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #000;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .toggle-label span {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-main);
+      }
+
+      /* Image Preview Area */
       .preview-area {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+        padding: 16px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 12px;
+        border: 1px dashed var(--border);
+        min-height: 80px;
       }
+      
       .preview-item {
         position: relative;
-        width: 100px;
-        height: 100px;
-        border-radius: 8px;
+        aspect-ratio: 1;
+        border-radius: 10px;
         overflow: hidden;
         border: 1px solid var(--border);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
       }
+      .preview-item:hover {
+        transform: translateY(-2px);
+        border-color: var(--text-muted);
+      }
+      
       .preview-item img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
+
       .preview-item .badge {
         position: absolute;
-        top: 4px;
-        left: 4px;
-        background: rgba(0, 0, 0, 0.6);
+        top: 6px;
+        left: 6px;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(4px);
         color: #fff;
         font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
       }
+
       .preview-item .remove-btn {
         position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(255, 0, 0, 0.8);
+        top: 6px;
+        right: 6px;
+        background: rgba(239, 68, 68, 0.9);
         color: #fff;
         border: none;
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 14px;
-        line-height: 1;
-        padding: 0;
+        transition: all 0.2s;
+        opacity: 0;
       }
+      .preview-item:hover .remove-btn { opacity: 1; }
+      .preview-item .remove-btn:hover { transform: scale(1.1); background: #ef4444; }
+
       .preview-item .primary-btn {
         position: absolute;
-        bottom: 4px;
-        left: 4px;
-        background: rgba(0, 150, 255, 0.9);
-        color: #fff;
+        bottom: 6px;
+        right: 6px;
+        left: 6px;
+        background: rgba(255,255,255,0.9);
+        color: #000;
         border: none;
-        font-size: 9px;
-        padding: 2px 6px;
-        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px;
+        border-radius: 6px;
         cursor: pointer;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.2s;
+      }
+      .preview-item:hover .primary-btn { opacity: 1; transform: translateY(0); }
+      .preview-item .primary-btn:hover { background: #fff; }
+
+      /* Footer Actions */
+      .form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        border-top: 1px solid var(--border);
+        padding-top: 24px;
+        margin-top: 10px;
+      }
+
+      /* File Input Customization */
+      input[type="file"]::file-selector-button {
+        background: var(--accent);
+        border: none;
+        color: #000;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        margin-right: 12px;
+        transition: opacity 0.2s;
+      }
+      input[type="file"]::file-selector-button:hover {
+        opacity: 0.9;
       }
     </style>
 
