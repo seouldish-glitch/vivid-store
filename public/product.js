@@ -505,6 +505,18 @@ document.addEventListener("DOMContentLoaded", () => {
   initAnnouncements();
   createSnowflakes();
 
+  // Navigation Toggle
+  const navToggle = document.getElementById("navToggle");
+  const navCenter = document.querySelector(".nav-center");
+  if (navToggle && navCenter) {
+    navToggle.addEventListener("click", () => {
+      navCenter.classList.toggle("open");
+    });
+    navCenter.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => navCenter.classList.remove("open"));
+    });
+  }
+
   const page = document.querySelector(".page");
   if (page) {
     setTimeout(() => page.classList.add("loaded"), 100);

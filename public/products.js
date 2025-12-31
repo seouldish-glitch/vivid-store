@@ -382,5 +382,18 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuthUI();
   loadData();
   initAnnouncements();
+  
+  // Navigation Toggle
+  const navToggle = document.getElementById("navToggle");
+  const navCenter = document.querySelector(".nav-center");
+  if (navToggle && navCenter) {
+    navToggle.addEventListener("click", () => {
+      navCenter.classList.toggle("open");
+    });
+    navCenter.querySelectorAll(".nav-link").forEach(link => {
+      link.addEventListener("click", () => navCenter.classList.remove("open"));
+    });
+  }
+
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 });
