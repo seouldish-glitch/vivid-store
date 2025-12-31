@@ -745,7 +745,7 @@
   });
 
   createProductBtn.addEventListener("click", () => {
-    window.location.href = "/admin/product-editor";
+    window.location.href = "/admin-product-editor.html";
   });
 
   function openProductModal(product, onSubmit) {
