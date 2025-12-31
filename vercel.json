@@ -10,7 +10,7 @@
   ],
   "rewrites": [
     {
-      "source": "/auth/google",
+      "source": "/auth/(.*)",
       "destination": "/api/index.js"
     },
     {
