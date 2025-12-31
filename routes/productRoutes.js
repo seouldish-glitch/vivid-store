@@ -23,11 +23,29 @@ const { requireAuth, requireAdmin } = require("./_middleware");
 router.get("/:id/comments", async (req, res) => {
   try {
     const comments = await Comment.find({ product: req.params.id })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 }) // Oldest first for proper threading
       .lean();
 
+    // Separate parent comments and replies
+    const parentComments = comments.filter(c => !c.parentComment);
+    const replies = comments.filter(c => c.parentComment);
+
+    // Sort parent comments newest first
+    parentComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Build threaded structure: parent followed by its replies
+    const threaded = [];
+    parentComments.forEach(parent => {
+      // Add parent
+      threaded.push(parent);
+      // Add its replies (oldest first under parent)
+      const parentReplies = replies.filter(r => String(r.parentComment) === String(parent._id));
+      parentReplies.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      threaded.push(...parentReplies);
+    });
+
     // Enrich comments with permissions
-    const enriched = comments.map(c => {
+    const enriched = threaded.map(c => {
       const isOwner = req.user && String(c.user) === String(req.user._id);
       const isAdmin = req.user?.isAdmin;
       return {
