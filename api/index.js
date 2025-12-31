@@ -7,6 +7,7 @@ const MongoStore = require("connect-mongo");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
@@ -146,6 +147,31 @@ try {
   const cartRoutes = require("../routes/cartRoutes");
   const checkoutRoutes = require("../routes/checkoutRoutes");
   const announcementRoutes = require("../routes/announcementRoutes");
+
+  // Handle Protected Admin Route (Server-side)
+  app.get("/admin", (req, res) => {
+    // Basic check matching middleware logic
+    const user = req.user;
+    const isAdmin = user && (user.isAdmin || (user.email && user.email.toLowerCase() === "owner@example.com")); 
+    
+    if (isAdmin) {
+      const adminFile = path.join(process.cwd(), "public", "admin-panel.html");
+      const fallback = path.join(__dirname, "..", "public", "admin-panel.html");
+      
+      if (fs.existsSync(adminFile)) res.sendFile(adminFile);
+      else if (fs.existsSync(fallback)) res.sendFile(fallback);
+      else res.status(500).send("Admin panel not found on server");
+    } else {
+      // Serve custom 404
+      const notFoundFile = path.join(process.cwd(), "public", "404.html");
+      const fallback = path.join(__dirname, "..", "public", "404.html");
+      
+      res.status(404);
+      if (fs.existsSync(notFoundFile)) res.sendFile(notFoundFile);
+      else if (fs.existsSync(fallback)) res.sendFile(fallback);
+      else res.send("404 Not Found");
+    }
+  });
 
   app.use("/auth", authRoutes);
   app.use("/api/products", productRoutes);
