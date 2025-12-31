@@ -39,7 +39,7 @@
     },
     {
       "source": "/admin",
-      "destination": "/admin.html"
+      "destination": "/api/index.js"
     },
     {
       "source": "/admin-product-editor",
