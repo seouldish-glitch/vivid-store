@@ -146,9 +146,11 @@ const adminRoutes = require("../routes/adminRoutes");
 const cartRoutes = require("../routes/cartRoutes");
 const checkoutRoutes = require("../routes/checkoutRoutes");
 const announcementRoutes = require("../routes/announcementRoutes");
+const categoryRoutes = require("../routes/categoryRoutes");
 
 app.use("/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
