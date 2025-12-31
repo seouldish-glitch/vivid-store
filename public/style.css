@@ -1799,3 +1799,47 @@ img {
     height: 50px;
   }
 }
+@media (max-width: 800px) {
+  .nav-center {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(5, 5, 9, 0.98);
+    backdrop-filter: blur(20px);
+    flex-direction: column;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+
+  .nav-center.open {
+    display: flex;
+    animation: slideDownNav 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+    gap: 0;
+  }
+
+  .nav-link {
+    width: 100%;
+    padding: 16px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 15px;
+  }
+  
+  .nav-link:last-child {
+    border-bottom: none;
+  }
+}
+
+@keyframes slideDownNav {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
