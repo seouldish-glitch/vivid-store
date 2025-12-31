@@ -48,10 +48,6 @@
       "destination": "/admin.html"
     },
     {
-      "source": "/admin-product-editor",
-      "destination": "/admin-product-editor.html"
-    },
-    {
       "source": "/login",
       "destination": "/login.html"
     },
