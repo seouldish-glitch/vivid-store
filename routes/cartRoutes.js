@@ -1,5 +1,9 @@
 const express = require("express");
 const router = express.Router();
+const { requireAuth } = require("./_middleware");
+
+// Require authentication for all cart operations
+router.use(requireAuth);
 
 // Get cart from session
 router.get("/", (req, res) => {
