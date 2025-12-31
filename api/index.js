@@ -139,25 +139,20 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 
 // API Routes
-try {
-  const authRoutes = require("../routes/authRoutes");
-  const productRoutes = require("../routes/productRoutes");
-  const adminRoutes = require("../routes/adminRoutes");
-  const cartRoutes = require("../routes/cartRoutes");
-  const checkoutRoutes = require("../routes/checkoutRoutes");
-  const announcementRoutes = require("../routes/announcementRoutes");
+const authRoutes = require("../routes/authRoutes");
+const productRoutes = require("../routes/productRoutes");
+const adminRoutes = require("../routes/adminRoutes");
+const cartRoutes = require("../routes/cartRoutes");
+const checkoutRoutes = require("../routes/checkoutRoutes");
+const announcementRoutes = require("../routes/announcementRoutes");
 
-  app.use("/auth", authRoutes);
-  app.use("/api/products", productRoutes);
-  app.use("/api/admin", adminRoutes);
-  app.use("/api/cart", cartRoutes);
-  app.use("/api/checkout", checkoutRoutes);
-  app.use("/api/announcements", announcementRoutes);
-  console.log("✅ Routes loaded");
-} catch (err) {
-  console.error("❌ Error loading routes:", err.message);
-  console.error(err.stack);
-}
+app.use("/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/checkout", checkoutRoutes);
+app.use("/api/announcements", announcementRoutes);
+console.log("✅ Routes loaded");
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
