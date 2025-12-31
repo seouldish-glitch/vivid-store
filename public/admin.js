@@ -720,7 +720,7 @@
     productsTbody.querySelectorAll("[data-action='edit']").forEach(btn => {
       btn.addEventListener("click", () => {
         const pid = btn.dataset.id;
-        window.location.href = `/admin/product-editor?id=${pid}`;
+        openProductEditor(pid);
       });
     });
   }
@@ -747,6 +747,7 @@
   createProductBtn.addEventListener("click", () => {
     openProductEditor();
   });
+  window.loadProducts = loadProducts;
 
   function openProductModal(product, onSubmit) {
     const html = `
