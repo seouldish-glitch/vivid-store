@@ -12,6 +12,28 @@
   </head>
 
   <body>
+    <script>
+      (function() {
+        // Immediately hide body to prevent content flash
+        document.body.style.display = 'none';
+        
+        fetch("/auth/me", { credentials: "include" })
+          .then(res => {
+            if (!res.ok) throw new Error("Auth failed");
+            return res.json();
+          })
+          .then(data => {
+            if (data.user && data.user.isAdmin) {
+              document.body.style.display = ''; // Show content
+            } else {
+              window.location.href = "/404.html";
+            }
+          })
+          .catch(() => {
+            window.location.href = "/404.html";
+          });
+      })();
+    </script>
     <div id="fire-loader">
       <div class="fire-text">ADMIN PANEL</div>
     </div>
