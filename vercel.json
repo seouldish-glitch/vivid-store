@@ -60,10 +60,6 @@
     {
       "source": "/banned",
       "destination": "/banned.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.js"
     }
   ],
   "headers": [
