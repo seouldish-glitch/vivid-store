@@ -82,9 +82,13 @@ try {
 
 // Passport Configuration
 // Passport Configuration
-const configurePassport = require("../config/passport");
-configurePassport();
-console.log("✅ Passport configured");
+try {
+  const configurePassport = require("../config/passport");
+  configurePassport();
+  console.log("✅ Passport configured");
+} catch (err) {
+  console.error("❌ Passport configuration failed (Google Auth will not work):", err.message);
+}
 
 // Middleware
 app.use(express.json());
