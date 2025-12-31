@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.js": {
+      "memory": 2048,
+      "maxDuration": 10
+    }
+  },
   "buildCommand": "npm install",
   "redirects": [
     {
