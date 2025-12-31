@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin Dashboard — Vivid Vision</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </head>
+
+  <body>
+    <script>
+      (function() {
+        // Immediately hide body to prevent content flash
+        document.body.style.display = 'none';
+        
+        fetch("/auth/me", { credentials: "include" })
+          .then(res => {
+            if (!res.ok) throw new Error("Auth failed");
+            return res.json();
+          })
+          .then(data => {
+            if (data.user && data.user.isAdmin) {
+              document.body.style.display = ''; // Show content
+            } else {
+              window.location.href = "/404.html";
+            }
+          })
+          .catch(() => {
+            window.location.href = "/404.html";
+          });
+      })();
+    </script>
+    <div id="fire-loader">
+      <div class="fire-text">ADMIN PANEL</div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="brand">
+        <img
+          src="https://www.vividvision.lk/l.png"
+          alt="Logo"
+          class="brand-logo"
+        />
+        <span>VIVID VISION</span>
+      </div>
+
+      <nav class="nav-menu" id="tabs">
+        <div class="tab active" data-tab="users">
+          <span>Users</span>
+        </div>
+        <div class="tab" data-tab="products">
+          <span>Products</span>
+        </div>
+        <div class="tab" data-tab="comments">
+          <span>Comments</span>
+        </div>
+        <div class="tab" data-tab="statics">
+          <span>Statistics</span>
+        </div>
+        <div class="tab" data-tab="banned">
+          <span>Banned</span>
+        </div>
+        <div class="tab" data-tab="orders">
+          <span>Orders</span>
+        </div>
+        <div class="tab" data-tab="categories">
+          <span>Categories</span>
+        </div>
+        <div class="tab" data-tab="converter">
+          <span>Image Converter</span>
+        </div>
+        <div class="tab" data-tab="announcements">
+          <span>Announcements</span>
+        </div>
+        <div class="tab" data-tab="developer">
+          <span>Developer</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="vv-btn ghost" style="width: 100%">
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <div class="page-title">Dashboard</div>
+        <div class="top-actions">
+          <button id="refreshAll" class="vv-btn ghost">Refresh Data</button>
+        </div>
+      </header>
+
+      <div class="content-scroll" id="content">
+        <div class="panel" id="panel-users">
+          <div class="flex-row">
+            <input
+              id="userSearch"
+              class="input"
+              placeholder="Search users by name or email..."
+            />
+            <div style="display: flex; gap: 10px; align-items: center">
+              <button id="userPrev" class="vv-btn ghost">Prev</button>
+              <span
+                id="userPageInfo"
+                class="text-muted"
+                style="font-size: 13px; min-width: 60px; text-align: center"
+                >1 / 1</span
+              >
+              <button id="userNext" class="vv-btn ghost">Next</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-products" style="display: none">
+          <div class="flex-row">
+            <input
+              id="productSearch"
+              class="input"
+              placeholder="Search products..."
+            />
+            <button id="createProductBtn" class="vv-btn">Create Product</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Tag</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-comments" style="display: none">
+          <div class="flex-row">
+            <input
+              id="commentFilter"
+              class="input"
+              placeholder="Filter comments..."
+            />
+            <button id="refreshComments" class="vv-btn ghost">Refresh</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Comment</th>
+                  <th>Product</th>
+                  <th>Date</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="commentsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-statics" style="display: none">
+          <div class="card-grid" id="statsWrap">
+            <div class="stat-card">Loading stats...</div>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-banned" style="display: none">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>User Snapshot</th>
+                  <th>Reason</th>
+                  <th>Banned At</th>
+                  <th>Type</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bannedTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-orders" style="display: none">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-categories" style="display: none">
+          <div class="flex-row">
+            <input
+              id="newCategoryName"
+              class="input"
+              placeholder="New Category Name..."
+            />
+            <input
+              id="newCategoryDesc"
+              class="input"
+              placeholder="Description (optional)"
+            />
+            <button id="createCategoryBtn" class="vv-btn">Add Category</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Slug</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="categoriesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-converter" style="display: none">
+          <div class="stat-card" style="max-width: 900px">
+            <h3 style="margin-top: 0">📸 Image Converter & Optimizer</h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 13px;
+                margin-bottom: 20px;
+              "
+            >
+              Convert and optimize your product images to the recommended
+              1200×900px (4:3 ratio) format.
+            </p>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                margin-bottom: 20px;
+              "
+            >
+              <div>
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                  >Upload Images</label
+                >
+                <div
+                  id="dropZone"
+                  style="
+                    border: 2px dashed rgba(245, 200, 76, 0.3);
+                    border-radius: 12px;
+                    padding: 40px 20px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    background: rgba(245, 200, 76, 0.05);
+                  "
+                >
+                  <div style="font-size: 48px; margin-bottom: 12px">📁</div>
+                  <div
+                    style="
+                      font-size: 14px;
+                      font-weight: 600;
+                      margin-bottom: 6px;
+                    "
+                  >
+                    Drop images here
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted)">
+                    or click to browse
+                  </div>
+                  <input
+                    type="file"
+                    id="converterInput"
+                    accept="image/*"
+                    multiple
+                    style="display: none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  style="
+                    display: block;
+                    margin-bottom: 8px;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                  >Conversion Settings</label
+                >
+                <div style="display: flex; flex-direction: column; gap: 12px">
+                  <label style="display: flex; align-items: center; gap: 8px">
+                    <input
+                      type="radio"
+                      name="conversionMode"
+                      value="1200x900"
+                      checked
+                    />
+                    <span style="font-size: 13px"
+                      >1200×900px (Recommended 4:3)</span
+                    >
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px">
+                    <input type="radio" name="conversionMode" value="800x600" />
+                    <span style="font-size: 13px">800×600px (Smaller 4:3)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px">
+                    <input
+                      type="radio"
+                      name="conversionMode"
+                      value="1600x1200"
+                    />
+                    <span style="font-size: 13px">1600×1200px (Large 4:3)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px">
+                    <input type="radio" name="conversionMode" value="custom" />
+                    <span style="font-size: 13px">Custom Size</span>
+                  </label>
+                  <div
+                    id="customSizeInputs"
+                    style="display: none; padding-left: 24px; gap: 8px"
+                  >
+                    <input
+                      type="number"
+                      id="customWidth"
+                      class="input"
+                      placeholder="Width"
+                      style="width: 80px"
+                      value="1200"
+                    />
+                    <span>×</span>
+                    <input
+                      type="number"
+                      id="customHeight"
+                      class="input"
+                      placeholder="Height"
+                      style="width: 80px"
+                      value="900"
+                    />
+                  </div>
+
+                  <label style="display: block; margin-top: 8px">
+                    <span
+                      style="
+                        font-size: 13px;
+                        display: block;
+                        margin-bottom: 4px;
+                      "
+                      >Quality (0-100%)</span
+                    >
+                    <input
+                      type="range"
+                      id="qualitySlider"
+                      min="50"
+                      max="100"
+                      value="85"
+                      style="width: 100%"
+                    />
+                    <span
+                      id="qualityValue"
+                      style="font-size: 12px; color: var(--accent)"
+                      >85%</span
+                    >
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div id="previewArea" style="display: none; margin-top: 20px">
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
+              >
+                <h4 style="margin: 0">Preview & Download</h4>
+                <button
+                  id="downloadAllBtn"
+                  class="vv-btn"
+                  style="display: none"
+                >
+                  Download All
+                </button>
+              </div>
+              <div
+                id="previewGrid"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                  gap: 16px;
+                "
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-announcements" style="display: none">
+          <div class="card-grid" style="grid-template-columns: 1fr; margin-bottom: 24px;">
+            <div class="stat-card">
+              <h3 style="margin-top:0">Create New Announcement</h3>
+              <form id="announcementForm" style="display: flex; flex-direction: column; gap:16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                  <label>
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Title</div>
+                    <input type="text" id="annTitle" class="input" placeholder="e.g. System Maintenance" required>
+                  </label>
+                  <label>
+                    <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Type</div>
+                    <select id="annType" class="input">
+                      <option value="info">Info (Blue)</option>
+                      <option value="warning">Warning (Yellow)</option>
+                      <option value="success">Success (Green)</option>
+                      <option value="danger">Danger (Red)</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Message</div>
+                  <textarea id="annMessage" class="input" style="width:100%; height:80px; resize:none;" placeholder="Your message here..." required></textarea>
+                </label>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <button type="submit" class="vv-btn">Create Announcement</button>
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;">
+                    <input type="checkbox" id="annActive" checked> Active
+                  </label>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Title</th>
+                  <th>Message</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th style="text-align: right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="announcementsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-developer" style="display: none">
+          <div class="stat-card" style="max-width: 600px">
+            <h3 style="margin-top: 0">Developer Tools</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px">
+              <label>
+                <div
+                  style="
+                    margin-bottom: 6px;
+                    font-size: 13px;
+                    color: var(--text-muted);
+                  "
+                >
+                  Discord Webhook URL
+                </div>
+                <input
+                  id="devWebhook"
+                  class="input"
+                  style="width: 100%"
+                  placeholder="https://discord.com/api/webhooks/..."
+                />
+              </label>
+              <label>
+                <div
+                  style="
+                    margin-bottom: 6px;
+                    font-size: 13px;
+                    color: var(--text-muted);
+                  "
+                >
+                  Test Message
+                </div>
+                <textarea
+                  id="devMessage"
+                  class="input"
+                  style="width: 100%"
+                  rows="4"
+                ></textarea>
+              </label>
+              <button id="sendDev" class="vv-btn">Send Test Hook</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/modals.js"></script>
+    <script src="/admin.js" defer></script>
+  </body>
+</html>
