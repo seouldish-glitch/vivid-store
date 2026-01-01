@@ -1843,3 +1843,11 @@ img {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
+@media (max-width: 800px) {
+  .hero-actions {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
