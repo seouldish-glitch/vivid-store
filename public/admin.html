@@ -859,6 +859,30 @@
       input[type="file"]::file-selector-button:hover {
         opacity: 0.9;
       }
+
+      @media (max-width: 768px) {
+        #productEditorForm {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        #productEditorModal .modal-content {
+          width: 95%;
+          margin: 10px auto;
+          max-height: 95vh;
+        }
+        #productEditorModal .modal-header {
+          padding: 16px 20px;
+        }
+        #productEditorModal .modal-body {
+          padding: 20px;
+        }
+        .form-actions {
+          flex-direction: column;
+        }
+        .form-actions .vv-btn {
+          width: 100%;
+        }
+      }
     </style>
 
     <script src="/modals.js"></script>

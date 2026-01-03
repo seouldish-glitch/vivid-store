@@ -313,6 +313,7 @@ select option {
     color: var(--text-muted) !important;
 }
 
+
 .thumb {
     width: 48px;
     height: 48px;
@@ -320,6 +321,25 @@ select option {
     border-radius: 6px;
     border: 1px solid var(--border);
 }
+
+@media (max-width: 600px) {
+    #vv-modal {
+        width: 96% !important;
+        margin: 10px !important;
+        max-height: 96vh !important;
+    }
+    .input {
+        width: 100% !important;
+    }
+    .vv-btn {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    #vv-modal-actions {
+        flex-direction: column-reverse;
+    }
+}
+
 
 #fire-loader {
     position: fixed;
