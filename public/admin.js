@@ -751,7 +751,7 @@
 
   function openProductModal(product, onSubmit) {
     const html = `
-      <form id="vv-admin-product-form" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;min-width:320px">
+      <form id="vv-admin-product-form" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;width:100%">
         <label>Name <input name="name" value="${escapeHtml(product?.name || "")}" class="input" required></label>
         <label>Subtitle <input name="subtitle" value="${escapeHtml(product?.subtitle || "")}" class="input"></label>
         <div style="display:flex;gap:10px">
