@@ -93,6 +93,25 @@ router.post("/:id/comments", requireAuth, async (req, res) => {
       });
     }
 
+    // Cooldown check: 48 hours for non-admins
+    if (!req.user.isAdmin) {
+      const lastComment = await Comment.findOne({ user: req.user._id })
+        .sort({ createdAt: -1 });
+
+      if (lastComment) {
+        const fortyEightHoursInMs = 48 * 60 * 60 * 1000;
+        const timeSinceLastComment = new Date() - new Date(lastComment.createdAt);
+
+        if (timeSinceLastComment < fortyEightHoursInMs) {
+          const remainingMs = fortyEightHoursInMs - timeSinceLastComment;
+          const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+          return res.status(429).json({ 
+            error: `Please wait ${remainingHours} more hours before posting another comment.` 
+          });
+        }
+      }
+    }
+
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
