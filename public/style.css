@@ -341,6 +341,7 @@ img {
 @media (max-width: 800px) {
   .nav-toggle {
     display: block;
+    z-index: 1001;
   }
 }
 

@@ -237,7 +237,50 @@
 
       .nav-center {
         display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(5, 5, 9, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        z-index: 999;
       }
+
+      .nav-center.open {
+        display: flex;
+        animation: slideInUp 0.3s ease;
+      }
+
+      .nav-links {
+        flex-direction: column;
+        width: 100%;
+        gap: 0;
+      }
+
+      .nav-link {
+        width: 100%;
+        padding: 16px 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      
+      .nav-toggle {
+        display: block !important;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px 10px;
+        border-radius: 6px;
+        z-index: 1001;
+      }
+    }
+
+    .nav-toggle {
+      display: none;
     }
     .section {
       max-width: 1200px;
@@ -578,6 +621,9 @@
     </nav>
     <div class="nav-right">
       <a href="/products" class="btn-outline">Shop now</a>
+      <button id="navToggle" class="nav-toggle" type="button" aria-label="Toggle navigation">
+        ☰
+      </button>
     </div>
   </header>
 
@@ -866,6 +912,16 @@
         statusEl.classList.add("error");
       }
     });
+    const navToggle = document.getElementById("navToggle");
+    const navCenter = document.querySelector(".nav-center");
+    if (navToggle && navCenter) {
+      navToggle.addEventListener("click", () => {
+        navCenter.classList.toggle("open");
+      });
+      navCenter.querySelectorAll(".nav-link").forEach(link => {
+        link.addEventListener("click", () => navCenter.classList.remove("open"));
+      });
+    }
   </script>
 </body>
 
