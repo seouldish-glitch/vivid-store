@@ -877,8 +877,8 @@ img {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   z-index: 900;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 1;
+  visibility: visible;
   transition: opacity var(--transition-med), visibility var(--transition-med);
 }
 

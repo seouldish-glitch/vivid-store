@@ -16,6 +16,19 @@ let currentReplyToName = null;
 let commentTextElGlobal = null;
 let commentStatusElGlobal = null;
 
+// Cart elements
+const cartBtn = document.getElementById("cartBtn");
+const cartDrawer = document.getElementById("cartDrawer");
+const cartOverlay = document.getElementById("cartOverlay");
+const hideCartBtn = document.getElementById("hideCartBtn");
+const cartItemsEl = document.getElementById("cartItems");
+const cartSubtotalEl = document.getElementById("cartSubtotal");
+const cartCountEl = document.getElementById("cartCount");
+const checkoutBtn = document.getElementById("checkoutBtn");
+
+const cart = [];
+let productsCache = [null]; // We only deal with one product mostly here but addToCart expects the object
+
 let slideIndex = 0;
 
 window.changeSlide = function (n) {
@@ -118,8 +131,8 @@ async function loadProduct() {
             ${(p.features || []).map((f) => `<li>${f}</li>`).join("")}
           </ul>
           <div class="detail-actions">
-            <button id="detailWhatsapp" class="btn-primary" ${p.inStock === false ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-              ${p.inStock === false ? 'Out of Stock' : 'Order via WhatsApp'}
+            <button id="addToCartBtn" class="btn-primary" ${p.inStock === false ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+              ${p.inStock === false ? 'Out of Stock' : 'Add to cart'}
             </button>
             <a href="/" class="btn-outline">Back to store</a>
           </div>
@@ -127,21 +140,15 @@ async function loadProduct() {
       </div>
     `;
 
-    const waBtn = document.getElementById("detailWhatsapp");
-    if (waBtn && p.inStock !== false) {
-      waBtn.addEventListener("click", () => {
-        const messageLines = [
-          "Hello, I'm interested in this product:",
-          "",
-          p.name,
-          p.subtitle || "",
-          "",
-          "Price: " + formatPrice(p.price),
-        ];
-        const message = encodeURIComponent(messageLines.join("\n"));
-        window.location.href = `https://wa.me/${WHATSAPP_PHONE}?text=${message}`;
+    const addBtn = document.getElementById("addToCartBtn");
+    if (addBtn && p.inStock !== false) {
+      addBtn.addEventListener("click", () => {
+        addToCart(p);
       });
     }
+
+    // Call restore to make sure cart state is synced if they came from home
+    await restoreCartFromServer();
   } catch (err) {
     console.error("Error loading product", err);
     if (container) container.innerHTML = "<p>Error loading product.</p>";
@@ -497,6 +504,130 @@ async function initAnnouncements() {
   } catch (err) {}
 }
 
+// --- CART LOGIC ---
+
+function openCart() {
+  cartDrawer?.classList.add("open");
+  cartOverlay?.classList.remove("hidden");
+}
+function closeCart() {
+  cartDrawer?.classList.remove("open");
+  cartOverlay?.classList.add("hidden");
+}
+
+cartBtn?.addEventListener("click", () => {
+  const userInfo = document.getElementById("userInfo");
+  if (!userInfo || userInfo.style.display === "none") {
+    if (window.htmlAlert) htmlAlert("info", "Login Required", "Please login to view your cart.");
+    else alert("Please login to view your cart.");
+    window.location.href = "/login";
+    return;
+  }
+  openCart();
+});
+
+hideCartBtn?.addEventListener("click", closeCart);
+cartOverlay?.addEventListener("click", closeCart);
+
+function updateCartUI() {
+  if (!cartItemsEl) return;
+  cartItemsEl.innerHTML = "";
+  if (cart.length === 0) {
+    cartItemsEl.innerHTML = `<div class="cart-empty" style="text-align:center; padding:20px; color:var(--muted);">Your cart is empty.</div>`;
+  } else {
+    cart.forEach((item) => {
+      const el = document.createElement("div");
+      el.className = "cart-item";
+      el.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-subtle); gap:12px;";
+      el.innerHTML = `
+        <div style="flex:1;">
+          <div class="cart-item-name" style="font-weight:600; font-size:14px;">${escapeHtml(item.name)}</div>
+          <div class="cart-item-meta" style="font-size:12px; color:var(--muted);">${item.quantity} × ${formatPrice(item.price)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="cart-item-total" style="font-weight:600; color:var(--accent);">${formatPrice(item.price * item.quantity)}</div>
+          <div class="cart-item-remove" style="font-size:11px; color:var(--danger); cursor:pointer; margin-top:4px;">Remove</div>
+        </div>
+      `;
+      el.querySelector(".cart-item-remove").onclick = () => removeFromCart(item.id);
+      cartItemsEl.appendChild(el);
+    });
+  }
+  if (cartSubtotalEl) cartSubtotalEl.textContent = formatPrice(cart.reduce((t, i) => t + i.price * i.quantity, 0));
+  if (cartCountEl) cartCountEl.textContent = cart.length;
+}
+
+async function addToCart(p) {
+  // Check auth
+  const userInfo = document.getElementById("userInfo");
+  if (!userInfo || userInfo.style.display === "none") {
+    if (window.htmlConfirm) {
+      const g = await htmlConfirm("Login Required", "Please login to add items to your cart. Login now?");
+      if (g) window.location.href = "/login";
+    } else {
+      alert("Please login to add items to your cart.");
+      window.location.href = "/login";
+    }
+    return;
+  }
+
+  const existing = cart.find((i) => i.id === (p._id || p.id));
+  if (existing) existing.quantity += 1;
+  else cart.push({ id: p._id, name: p.name, price: p.price, quantity: 1 });
+
+  updateCartUI();
+  openCart();
+  await syncCartToServer();
+}
+
+async function removeFromCart(id) {
+  const i = cart.findIndex((c) => c.id === id);
+  if (i !== -1) cart.splice(i, 1);
+  updateCartUI();
+  await syncCartToServer();
+}
+
+async function syncCartToServer() {
+  try {
+    const items = cart.map((i) => ({ productId: i.id, quantity: i.quantity }));
+    await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ items }),
+    });
+  } catch (err) {}
+}
+
+async function restoreCartFromServer() {
+  try {
+    const res = await fetch("/api/cart", { credentials: "include" });
+    if (!res.ok) return;
+    const items = await res.json();
+    
+    // We need the products names/prices. Since we are on a detail page, we might only have the current product.
+    // If there are other items in the cart, we fetch all products once to get their details.
+    if (items.length > 0) {
+      const pRes = await fetch("/api/products");
+      const allP = await pRes.json();
+      
+      cart.length = 0;
+      items.forEach((i) => {
+        const p = allP.find((pr) => pr._id === i.productId);
+        if (p) cart.push({ id: p._id, name: p.name, price: p.price, quantity: i.quantity });
+      });
+      updateCartUI();
+    }
+  } catch (err) {
+    console.error("Cart restore failed", err);
+  }
+}
+
+checkoutBtn?.addEventListener("click", () => {
+  if (!cart.length) return;
+  window.location.href = "/checkout";
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   initAuthUI();
   loadProduct();
@@ -533,3 +664,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".reveal-on-scroll").forEach(el => scrollObserver.observe(el));
 });
+

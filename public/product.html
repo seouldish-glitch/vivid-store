@@ -110,6 +110,27 @@
   </div>
 
   <!-- Only product logic here (no app.js, so it won't break products grid stuff) -->
+  <div id="cartOverlay" class="cart-overlay hidden"></div>
+  <aside id="cartDrawer" class="cart-drawer">
+    <div class="cart-header">
+      <h2>Your cart</h2>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-subtotal">
+        <span>Subtotal</span>
+        <span id="cartSubtotal">Rs. 0</span>
+      </div>
+      <button id="hideCartBtn" class="btn-outline cart-hide">Continue browsing</button>
+      <button id="checkoutBtn" class="btn-primary cart-checkout">Checkout on WhatsApp</button>
+    </div>
+  </aside>
+
+  <button id="cartBtn" class="cart-fab">
+    <span id="cartCount" class="cart-count">0</span>
+    <span>Cart</span>
+  </button>
+
   <script src="modals.js"></script>
   <script src="product.js"></script>
 </body>
