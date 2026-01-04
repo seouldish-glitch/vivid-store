@@ -461,23 +461,7 @@ loginBtn?.addEventListener("click", (e) => {
   window.location.href = "/login";
 });
 
-function createSnowflakes() {
-  const snowflakeCount = 50;
-  for (let i = 0; i < snowflakeCount; i++) {
-    const flake = document.createElement("div");
-    flake.classList.add("snowflake");
 
-    const size = Math.random() * 3 + 2 + "px";
-    flake.style.width = size;
-    flake.style.height = size;
-    flake.style.left = Math.random() * 100 + "vw";
-    flake.style.animationDuration = Math.random() * 5 + 5 + "s";
-    flake.style.animationDelay = Math.random() * 5 + "s";
-    flake.style.opacity = Math.random() * 0.5 + 0.3;
-
-    document.body.appendChild(flake);
-  }
-}
 
 async function initAnnouncements() {
   const bar = document.getElementById("announcement-bar");
@@ -634,7 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadComments();
   initCommentForm();
   initAnnouncements();
-  createSnowflakes();
+
 
   // Navigation Toggle
   const navToggle = document.getElementById("navToggle");
