@@ -17,6 +17,7 @@ const commentSchema = new mongoose.Schema(
 
 // Index for faster queries
 commentSchema.index({ product: 1, createdAt: -1 });
+commentSchema.index({ user: 1, createdAt: -1 }); // For cooldown checks
 commentSchema.index({ parentComment: 1 });
 
 module.exports = mongoose.model("Comment", commentSchema);
