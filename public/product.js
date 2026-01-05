@@ -1,4 +1,4 @@
-const WHATSAPP_PHONE = "9477XXXXXXX";
+const WHATSAPP_PHONE = "94783024455";
 
 function formatPrice(amount) {
   return "Rs. " + Number(amount).toLocaleString("en-LK");

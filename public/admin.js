@@ -178,10 +178,13 @@
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.name || "User")}</strong></td>
         <td class="muted">${escapeHtml(u.email || "-")}</td>
-        <td>${u.isAdmin ? "Admin" : "User"}</td>
+        <td>${u.isAdmin ? '<span class="badge" style="background:var(--accent);color:#000;font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px">Admin</span>' : "User"}</td>
         <td class="muted">${new Date(u.createdAt || Date.now()).toLocaleString()}</td>
         <td class="right nowrap">
-          <button class="vv-btn danger" data-id="${u._id}" data-action="ban" data-loading="false">
+          <button class="vv-btn ${u.isAdmin ? 'ghost' : ''} sm" data-id="${u._id}" data-action="toggle-admin" style="margin-right:8px">
+            ${u.isAdmin ? "Remove Admin" : "Make Admin"}
+          </button>
+          <button class="vv-btn danger sm" data-id="${u._id}" data-action="ban" data-loading="false">
             <span class="btn-text">Ban</span>
             <span class="btn-spinner" style="display:none;">⏳</span>
           </button>
@@ -189,6 +192,38 @@
       `;
       usersTbody.appendChild(tr);
     });
+
+    usersTbody.querySelectorAll("[data-action='toggle-admin']").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const isAdminNow = btn.textContent.trim().includes("Remove Admin");
+        const confirmMsg = isAdminNow ? "Remove admin privileges from this user?" : "Grant admin privileges to this user?";
+        
+        const ok = (window.htmlConfirm) ? await htmlConfirm("Change Role?", confirmMsg) : confirm(confirmMsg);
+        if (!ok) return;
+
+        try {
+          btn.disabled = true;
+          const res = await fetch(`/api/admin/users/${id}/toggle-admin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include"
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || "Failed to update role");
+          }
+          if (window.htmlToast) htmlToast("Role updated", { variant: "success" });
+          loadUsers();
+        } catch (err) {
+          if (window.htmlAlert) htmlAlert("error", "Update failed", err.message);
+          else alert(err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
     usersTbody.querySelectorAll("[data-action='ban']").forEach(b => {
       b.addEventListener("click", async function () {
         // Prevent double-click

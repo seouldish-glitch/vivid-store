@@ -1,4 +1,4 @@
-const WHATSAPP_PHONE = "9477XXXXXXX";
+const WHATSAPP_PHONE = "94783024455";
 
 const productGrid = document.getElementById("productGrid");
 const cartBtn = document.getElementById("cartBtn");
