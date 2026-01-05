@@ -46,7 +46,13 @@ passport.use(
           user.name = profile.displayName || user.name;
           user.email = email || user.email;
           if (photo) user.picture = photo;
-          user.isAdmin = isAdmin;
+          
+          // Only overwrite if email is in hardcoded list
+          // This allows "Make Admin" in panel to work for others
+          if (isAdmin) {
+            user.isAdmin = true;
+          }
+          
           await user.save();
           console.log("✅ User updated:", user._id);
         }
