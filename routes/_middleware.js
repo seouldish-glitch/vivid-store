@@ -5,7 +5,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
 
 function isAdminUser(user) {
   if (!user || !user.email) return false;
-  return ADMIN_EMAILS.includes(user.email.toLowerCase());
+  return ADMIN_EMAILS.includes(user.email.toLowerCase()) || user.isAdmin === true;
 }
 
 function requireAuth(req, res, next) {
@@ -17,7 +17,8 @@ function requireAuth(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (!req.user || !isAdminUser(req.user)) {
-    return res.status(403).json({ error: "Admin only" });
+    // Return 404 to mimic non-existence if unauthorized
+    return res.status(404).json({ error: "Not found" });
   }
   next();
 }

@@ -134,6 +134,33 @@ router.post("/users/:id/ban", async (req, res) => {
   }
 });
 
+router.post("/users/:id/toggle-admin", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Prevent changing own admin status to avoid accidental lockout
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(403).json({ error: "Cannot change your own admin status" });
+    }
+
+    user.isAdmin = !user.isAdmin;
+    await user.save();
+
+    await logEvent({
+      category: "ADMIN",
+      action: "USER_ADMIN_TOGGLE",
+      user: { name: req.user.name, email: req.user.email },
+      meta: { targetUser: user.email, isAdmin: user.isAdmin },
+    });
+
+    res.json({ success: true, isAdmin: user.isAdmin });
+  } catch (err) {
+    console.error("Toggle admin error", err);
+    res.status(500).json({ error: "Failed to toggle admin status" });
+  }
+});
+
 router.post("/users/:id/unban", async (req, res) => {
   try {
     // Find the ban record
